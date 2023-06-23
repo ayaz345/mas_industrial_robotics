@@ -57,10 +57,14 @@ class IsObjectLarge(smach.State):
         if obj is None:
             rospy.logwarn('Missing parameter "object". Using default.')
             return "large"
-        for large_object in userdata.large_objects:
-            if large_object.upper() in obj.upper():
-                return "large"
-        return "small"
+        return next(
+            (
+                "large"
+                for large_object in userdata.large_objects
+                if large_object.upper() in obj.upper()
+            ),
+            "small",
+        )
 
 
 # ===============================================================================
@@ -75,10 +79,7 @@ class ShouldReperceive(smach.State):
         )
 
     def execute(self, userdata):
-        if userdata.reperceive:
-            return 'yes'
-        else:
-            return 'no'
+        return 'yes' if userdata.reperceive else 'no'
 
 # ===============================================================================
 

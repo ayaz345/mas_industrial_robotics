@@ -15,10 +15,7 @@ if __name__ == "__main__":
     client.wait_for_server()
 
     goal = GenericExecuteGoal()
-    if len(sys.argv) > 1:
-        location = str(sys.argv[1]).upper()
-    else:
-        location = "PP01"
+    location = str(sys.argv[1]).upper() if len(sys.argv) > 1 else "PP01"
     goal.parameters.append(KeyValue(key="location", value=location))
     goal.parameters.append(KeyValue(key="perception_mode", value="three_view"))
 
@@ -41,5 +38,5 @@ if __name__ == "__main__":
     elif state == GoalStatus.ABORTED:
         rospy.logerr("Action FAILED")
     else:
-        rospy.logwarn("State: " + str(state))
+        rospy.logwarn(f"State: {str(state)}")
         rospy.loginfo(result)

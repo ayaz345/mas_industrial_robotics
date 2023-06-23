@@ -32,9 +32,9 @@ class SqueezeDet(ModelSkeleton):
 
         mc = self.mc
         if mc.LOAD_PRETRAINED_MODEL:
-            assert tf.gfile.Exists(mc.PRETRAINED_MODEL_PATH), \
-                'Cannot find pretrained model at the given path:' \
-                '  {}'.format(mc.PRETRAINED_MODEL_PATH)
+            assert tf.gfile.Exists(
+                mc.PRETRAINED_MODEL_PATH
+            ), f'Cannot find pretrained model at the given path:  {mc.PRETRAINED_MODEL_PATH}'
             self.caffemodel_weight = joblib.load(mc.PRETRAINED_MODEL_PATH)
 
         conv1 = self._conv_layer(
@@ -93,13 +93,34 @@ class SqueezeDet(ModelSkeleton):
         """
 
         sq1x1 = self._conv_layer(
-            layer_name+'/squeeze1x1', inputs, filters=s1x1, size=1, stride=1,
-            padding='SAME', stddev=stddev, freeze=freeze)
+            f'{layer_name}/squeeze1x1',
+            inputs,
+            filters=s1x1,
+            size=1,
+            stride=1,
+            padding='SAME',
+            stddev=stddev,
+            freeze=freeze,
+        )
         ex1x1 = self._conv_layer(
-            layer_name+'/expand1x1', sq1x1, filters=e1x1, size=1, stride=1,
-            padding='SAME', stddev=stddev, freeze=freeze)
+            f'{layer_name}/expand1x1',
+            sq1x1,
+            filters=e1x1,
+            size=1,
+            stride=1,
+            padding='SAME',
+            stddev=stddev,
+            freeze=freeze,
+        )
         ex3x3 = self._conv_layer(
-            layer_name+'/expand3x3', sq1x1, filters=e3x3, size=3, stride=1,
-            padding='SAME', stddev=stddev, freeze=freeze)
+            f'{layer_name}/expand3x3',
+            sq1x1,
+            filters=e3x3,
+            size=3,
+            stride=1,
+            padding='SAME',
+            stddev=stddev,
+            freeze=freeze,
+        )
 
-        return tf.concat([ex1x1, ex3x3], 3, name=layer_name+'/concat')
+        return tf.concat([ex1x1, ex3x3], 3, name=f'{layer_name}/concat')

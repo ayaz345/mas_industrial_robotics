@@ -33,7 +33,7 @@ class SerialInterface:
             self.board = serial.Serial(self.port, self.baud, timeout=self.timeout)
         except Exception as a:
             rospy.logerr(a)
-            rospy.logerr('Please check the port {}'.format(self.port))
+            rospy.logerr(f'Please check the port {self.port}')
 
     def send(self, message):
         """
@@ -59,7 +59,7 @@ class SerialInterface:
         msg_str = msg_str.decode().strip()
 
 
-        if len(msg_str) < 5 or not '{' in msg_str:
+        if len(msg_str) < 5 or '{' not in msg_str:
             return None
 
         if '}{' not in msg_str:
@@ -73,9 +73,4 @@ class SerialInterface:
             if '}' not in msgs[i]:
                 msgs[i] = msgs[i] + '}'
 
-        msgs_json = []
-
-        for msg in msgs:
-            msgs_json.append(json.loads(msg))
-
-        return msgs_json
+        return [json.loads(msg) for msg in msgs]

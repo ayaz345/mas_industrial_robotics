@@ -230,9 +230,8 @@ def restrict_angle_to_range(angle, offset, rotation_range):
     if inverted_range:
         if (offset + rotation_range[1]) < angle < (offset + rotation_range[0]):
             angle += math.radians(180.0)
-    else:
-        if not (offset + rotation_range[0] <= angle <= (offset + rotation_range[1])):
-            angle += math.radians(180.0)
+    elif not (offset + rotation_range[0] <= angle <= (offset + rotation_range[1])):
+        angle += math.radians(180.0)
 
     # Ensure the angle will not be greater than 360 degrees
     return angle % math.radians(360)

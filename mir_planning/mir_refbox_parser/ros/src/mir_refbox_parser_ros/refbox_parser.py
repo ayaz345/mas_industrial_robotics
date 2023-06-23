@@ -270,7 +270,6 @@ class RefboxParser(object):
 
         """
         self._inventory_message = atwork_ros_msgs.msg.Inventory(msg.items)
-        pass
 
     def load_instance_message_PP01(self, domain):
         # Creating the message
@@ -346,7 +345,7 @@ class RefboxParser(object):
 
     def load_inventory_to_knowledge_base(self):
 
-        if None == self._inventory_message:
+        if self._inventory_message is None:
             return
 
         # Creating the message
@@ -361,35 +360,31 @@ class RefboxParser(object):
             ## Uploading INSTANCE of Objects
             #################################
             # check if the instance_id is present
-            if 0 != item.object.instance_id.data:
+            if item.object.instance_id.data != 0:
                 # uploading the instance of object
                 text = self.object_type[item.object.type.data]
-                if text == "CONTAINER_BOX_BLUE" or text == "CONTAINER_BOX_RED":
+                if text in ["CONTAINER_BOX_BLUE", "CONTAINER_BOX_RED"]:
                     print ("NOT ADDING CONTAINERS")
                     continue
                 else:
                     name = self.load_instance_message("object", item)
                     object_instance_list.append(name)
 
-            else:
-                # if not then
-                # check quantity and loop on quantity
-                if 0 != item.quantity.data:
-                    for count in range(item.quantity.data):
-                        # uploading the instance of object
-                        name = self.load_instance_message("object", item, count)
-                        object_instance_list.append(name)
-                else:
-                    rospy.loginfo("Instance ID not provided as well as quantity ")
-                    # uploading the instance of object without ID and quantity
-                    text = self.object_type[item.object.type.data]
-                    if text == "CONTAINER_BOX_BLUE" or text == "CONTAINER_BOX_RED":
-                        continue
-                    else:
-                        name = self.load_instance_message("object", item)
-                        object_instance_list.append(name)
-                        self.event_out.publish("e_failure")
+            elif item.quantity.data == 0:
+                rospy.loginfo("Instance ID not provided as well as quantity ")
+                # uploading the instance of object without ID and quantity
+                text = self.object_type[item.object.type.data]
+                if text in ["CONTAINER_BOX_BLUE", "CONTAINER_BOX_RED"]:
+                    continue
+                name = self.load_instance_message("object", item)
+                object_instance_list.append(name)
+                self.event_out.publish("e_failure")
 
+            else:
+                for count in range(item.quantity.data):
+                    # uploading the instance of object
+                    name = self.load_instance_message("object", item, count)
+                    object_instance_list.append(name)
             # Flag for identifying if location or container
             instance_type_identifyer = None
 
@@ -397,7 +392,7 @@ class RefboxParser(object):
             ## Uploading INSTANCE of locations
             #################################
             # check if location exist
-            if 0 != item.location.type.data:
+            if item.location.type.data != 0:
                 name = self.load_instance_message("location", item)
 
                 # fill fact "Object" ON "location"
@@ -515,7 +510,6 @@ class RefboxParser(object):
         Order callback for taking the order
         """
         self._tasks = atwork_ros_msgs.msg.TaskInfo(msg.tasks)
-        pass
 
     ####################################################################
     # used for benchmarking
@@ -614,13 +608,13 @@ class RefboxParser(object):
         self.pub_logging_status.publish(logging_status)
 
     def process_task_message(self):
-        if None == self._tasks:
+        if self._tasks is None:
             return
         if atwork_ros_msgs.msg.Task.NAVIGATION == self._tasks.tasks[0].type.data:
             self.execute_navigation_task()
         elif atwork_ros_msgs.msg.Task.TRANSPORTATION == self._tasks.tasks[0].type.data:
             # check if the inventory data was written otherwise wait for inventory update
-            if False == self.inventory_update_complete_flag:
+            if self.inventory_update_complete_flag == False:
                 # Return without resetting the message and order flag
                 rospy.loginfo("The inventory is not updated. Waiting ")
                 return
@@ -646,16 +640,15 @@ class RefboxParser(object):
                 # The task is transportation
                 # find the object, its destination
 
-                if 0 != task.transportation_task.container.type_id.data:
+                if task.transportation_task.container.type_id.data != 0:
                     # container is available
                     # some order contain container in order but not in inventory, so need to add fact explicitly
                     name = self.load_instance_message(
                         "destination", task.transportation_task
                     )
-                    container_name = self.load_instance_message(
+                    if container_name := self.load_instance_message(
                         "container", task.transportation_task
-                    )
-                    if container_name:
+                    ):
                         # same the knowledge about the initial location of the container is missin, adding it
                         self.load_fact_message(
                             "on",
@@ -676,14 +669,13 @@ class RefboxParser(object):
                             "destination",
                         )
 
-                        object_name = self.fill_order(
+                        if object_name := self.fill_order(
                             task.transportation_task,
                             "in",
                             "object",
                             "container",
                             container_name=container_name,
-                        )
-                        if object_name:
+                        ):
                             self.load_fact_message(
                                 "insertable",
                                 object_name,
@@ -691,7 +683,7 @@ class RefboxParser(object):
                                 "destination",
                             )
 
-                elif 0 != task.transportation_task.destination.instance_id.data:
+                elif task.transportation_task.destination.instance_id.data != 0:
                     # if (0 != task.transportation_task.destination.instance_id.data): //Add when 'in' domain is not present
                     # In transportationtask sometimes the destination is not there in inventory
                     # Needs to add fact about the inventory
@@ -703,7 +695,7 @@ class RefboxParser(object):
                         task.transportation_task, "on", "object", "destination"
                     )
                     ## IF PP01 then we need to load some facts
-                    if 5 == task.transportation_task.destination.type.data:
+                    if task.transportation_task.destination.type.data == 5:
                         self.load_fact_message(
                             "on", "PP01_CAVITY", task.transportation_task, "destination"
                         )
@@ -730,16 +722,6 @@ class RefboxParser(object):
                 else:
                     # both container and destination not available
                     rospy.logerr("No Goal set")
-
-                if (0 != task.transportation_task.container.type_id.data) and (
-                    0 != task.transportation_task.destination.instance_id.data
-                ):
-                    ##Both container and destination available
-                    ###ERL2016 the containers need not moved so we dont need to add goal for the containers
-                    ###Add the below line when the container needs to be transported
-                    # self.fill_order(task.transportation_task, 'on', 'container', 'destination' )
-                    ###The Fact about the initial location of the container is missing
-                    pass
 
         rospy.loginfo("Task info upload completed")
 

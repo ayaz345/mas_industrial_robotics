@@ -145,9 +145,9 @@ class Node(object):
 
     def __repr__(self):
         string = "<"
-        string += "x: " + str(self.x) + ", "
-        string += "y: " + str(self.y) + ", "
-        string += "prob: " + str(self.probable_ws_direction) + ", "
-        string += "ws: " + str(self.ws)
+        string += f"x: {str(self.x)}, "
+        string += f"y: {str(self.y)}, "
+        string += f"prob: {str(self.probable_ws_direction)}, "
+        string += f"ws: {str(self.ws)}"
         string += ">"
         return string

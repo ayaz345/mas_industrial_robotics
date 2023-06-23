@@ -31,7 +31,7 @@ class PointcloudObjectRecognizer():
 
     def __init__(self, model, model_id, dataset, model_dir, ngaussians=2, variance=0.05):
         self.model = model
-        dataset_dir = model_id + "_" + dataset
+        dataset_dir = f"{model_id}_{dataset}"
         #cfg_folder = os.path.join(roslib.packages.get_pkg_dir("mir_object_recognition"), 'common', 'config')
 
         model_config_file = os.path.join(roslib.packages.get_pkg_dir("mir_object_recognition"),
@@ -64,11 +64,11 @@ class PointcloudObjectRecognizer():
             classifier_file = os.path.join(model_dir, 'classifier.pkl')
             label_encoder = os.path.join(model_dir, 'label_encoder.pkl')
             self.classifier = FeatureBasedClassifiers(classifier_file, label_encoder)
-        
+
         elif model == "cnn_based":
             checkpoint = os.path.join(model_dir, 'model.t7')
             module_name = "pc_object_recognition" + "." + model_id.lower()+"_"+"classifier"
-            class_name = model_id.upper()+"Classifier"
+            class_name = f"{model_id.upper()}Classifier"
             ClassifierClass = getattr(
                 importlib.import_module(module_name), class_name)
             model_configs = configs['model'][model][model_id.lower()]
@@ -86,37 +86,38 @@ class PointcloudObjectRecognizer():
         :type:                    mas_perception_msgs.object_list
         """
 
-        if object_list.objects:
-            rospy.loginfo("%d clouds received ", len(object_list.objects))
-            recognized_object_list = ObjectList()
-            recognized_object_list = object_list.objects
+        if not object_list.objects:
+            return
+        rospy.loginfo("%d clouds received ", len(object_list.objects))
+        recognized_object_list = ObjectList()
+        recognized_object_list = object_list.objects
 
-            for object in recognized_object_list:
-                if self.model == "feature_based":
-                    cloud = self.extract_pointcloud(
-                        object.views[0].point_cloud, color="hsv")
-                    features = self.fe_method(cloud)
-                    features = np.reshape(features, (1, -1))
-                    name, probability = self.classifier.classify(features)
-                    name = name[0]
-                elif self.model == "cnn_based":
-                    cloud = self.extract_pointcloud(
-                        object.views[0].point_cloud, color="rgb")
+        for object in recognized_object_list:
+            if self.model == "feature_based":
+                cloud = self.extract_pointcloud(
+                    object.views[0].point_cloud, color="hsv")
+                features = self.fe_method(cloud)
+                features = np.reshape(features, (1, -1))
+                name, probability = self.classifier.classify(features)
+                name = name[0]
+            elif self.model == "cnn_based":
+                cloud = self.extract_pointcloud(
+                    object.views[0].point_cloud, color="rgb")
 
-                    label, probability = self.classifier.classify(
-                        cloud, center=True, rotate=True, pad=True)
+                label, probability = self.classifier.classify(
+                    cloud, center=True, rotate=True, pad=True)
 
-                    if (label, probability) != (None, None):
-                        name = self.label_to_name[label]
-                        probability = probability
-                    else:
-                        name = "unknown object found"
-                        probability = 0.0
-                        continue
-                    rospy.loginfo('Name of the object found: %s', name)
-                object.name = name
-                object.probability = probability
-            self.pub.publish(recognized_object_list)
+                if (label, probability) != (None, None):
+                    name = self.label_to_name[label]
+                    probability = probability
+                else:
+                    name = "unknown object found"
+                    probability = 0.0
+                    continue
+                rospy.loginfo('Name of the object found: %s', name)
+            object.name = name
+            object.probability = probability
+        self.pub.publish(recognized_object_list)
 
     def extract_pointcloud(self, pc, color="hsv"):
         """

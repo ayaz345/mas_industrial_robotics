@@ -45,10 +45,7 @@ class CheckIfLocationIsShelf(smach.State):
     def execute(self, userdata):
         location = Utils.get_value_of(userdata.goal.parameters, "location")
         print("[Place Object Server] Location received : ", location)
-        if (location == "SH01") or (location == "SH02"):
-            return "shelf"
-        else:       
-            return "not_shelf"
+        return "shelf" if location in ["SH01", "SH02"] else "not_shelf"
 
 
 # ===============================================================================
@@ -79,7 +76,8 @@ class Threshold_calculation(smach.State):
 
         userdata.result = GenericExecuteResult()
         userdata.feedback = GenericExecuteFeedback(
-            current_state="GO_DEFAULT_THRESHOLD", text="No of time tried the IK reachability: " + str(userdata.threshold_counter),
+            current_state="GO_DEFAULT_THRESHOLD",
+            text=f"No of time tried the IK reachability: {userdata.threshold_counter}",
         )
         return result
         

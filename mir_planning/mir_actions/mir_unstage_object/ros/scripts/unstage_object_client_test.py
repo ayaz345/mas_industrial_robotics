@@ -16,10 +16,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         platform = str(sys.argv[1]).upper()
-        if len(sys.argv) > 2:
-            obj = str(sys.argv[2]).upper()
-        else:
-            obj = "M20"
+        obj = str(sys.argv[2]).upper() if len(sys.argv) > 2 else "M20"
     else:
         platform = "PLATFORM_MIDDLE"
         obj = "M20"
@@ -45,5 +42,5 @@ if __name__ == "__main__":
     elif state == GoalStatus.ABORTED:
         rospy.logerr("Action FAILED")
     else:
-        rospy.logwarn("State: " + str(state))
+        rospy.logwarn(f"State: {str(state)}")
         rospy.loginfo(client.get_result())

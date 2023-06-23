@@ -104,7 +104,9 @@ class OrientationIndependentIK(object):
         """
         self._initialise_base_to_arm_offset()
         if self._base_link_to_arm_base_offset is None:
-            rospy.logerr('Could not get translation from ' + str(self._base_link_frame) + ' to ' + str(self._arm_base_frame))
+            rospy.logerr(
+                f'Could not get translation from {str(self._base_link_frame)} to {str(self._arm_base_frame)}'
+            )
             return None
 
         input_pose = PoseStamped()
@@ -146,8 +148,8 @@ class OrientationIndependentIK(object):
             if reachable_pose is not None:
                 found_solution = True
                 rospy.logdebug('Found solution')
-                rospy.logdebug('Pitch range: ' + str(pitch_range))
-                rospy.logdebug('Yaw : ' + str(yaw))
+                rospy.logdebug(f'Pitch range: {str(pitch_range)}')
+                rospy.logdebug(f'Yaw : {str(yaw)}')
                 if self.debug:
                     self._pose_out_pub.publish(reachable_pose)
                 return (reachable_pose, OrientationIndependentIK.get_joint_pos_msg_from_joint_angles(joint_angles))
@@ -244,7 +246,7 @@ class OrientationIndependentIK(object):
         joint_position_msg = JointPositions()
         for i, joint_angle in enumerate(joint_angles):
             joint_value_msg = JointValue()
-            joint_value_msg.joint_uri = 'arm_joint_' + str(i+1)
+            joint_value_msg.joint_uri = f'arm_joint_{str(i + 1)}'
             joint_value_msg.unit = 'rad'
             joint_value_msg.value = joint_angle
             joint_position_msg.positions.append(joint_value_msg)

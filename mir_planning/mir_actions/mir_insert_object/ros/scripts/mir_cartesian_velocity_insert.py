@@ -161,7 +161,7 @@ class cartesian_velocity_insert:
             return "INIT"
         elif self.goal != None:
             return "RUNNING"
-        elif self.goal == None and self.event == "e_start":
+        elif self.event == "e_start":
             rospy.loginfo("Goal not recieved")
             self.event_out.publish("e_failure")
             self.event = None
@@ -267,9 +267,10 @@ class cartesian_velocity_insert:
             distance = np.linalg.norm(
                 (np.array(path[:, path.shape[1] - 1]) - current_pos)
             )
-            dist = []
-            for i in range(path.shape[1]):
-                dist.append(np.linalg.norm((path[:, i] - current_pos)))
+            dist = [
+                np.linalg.norm((path[:, i] - current_pos))
+                for i in range(path.shape[1])
+            ]
             index = np.argmin(dist)
 
             if index < previous_index:
@@ -284,11 +285,7 @@ class cartesian_velocity_insert:
             # Check if path repeated points in it, this will prevent trajectory execution as velocity between these two points will
             # be zero (difference is zero)
 
-            if index == path.shape[1] - 1:
-                ind = index
-            else:
-                ind = index + 1
-
+            ind = index if index == path.shape[1] - 1 else index + 1
             vel_x = self.feedforward_gain * (
                 path_x[ind] - path_x[index]
             ) + self.feedback_gain * (path_x[ind] - current_pos[0])

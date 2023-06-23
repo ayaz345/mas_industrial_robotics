@@ -73,97 +73,97 @@ class RGBObjectRecognizer():
                 self.device).eval()
 
     def image_recognition_cb(self, img_msg):
-        if img_msg.images:
-            result_list = ObjectList()
+        if not img_msg.images:
+            return
+        result_list = ObjectList()
+        rospy.loginfo(f"[{len(img_msg.images)}] images received: {self.model_name} ")
+        if self.net == 'detection':
             objects = []
-            rospy.loginfo("[{}] images received: {} ".format(
-                len(img_msg.images), self.model_name))
-            if self.net == 'detection':
-                try:
-                    cv_img = self.cvbridge.imgmsg_to_cv2(
-                        img_msg.images[0], "bgr8")
-                    # Padded resize
-                    img = letterbox(cv_img, self.img_size, stride=self.stride)[0]
+            try:
+                cv_img = self.cvbridge.imgmsg_to_cv2(
+                    img_msg.images[0], "bgr8")
+                # Padded resize
+                img = letterbox(cv_img, self.img_size, stride=self.stride)[0]
 
-                    # Convert
-                    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-                    img = np.ascontiguousarray(img)
+                # Convert
+                img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+                img = np.ascontiguousarray(img)
 
-                    if self.model_name == 'yolov7':
-                        old_img_w = old_img_h = self.img_size
-                        old_img_b = 1
+                if self.model_name == 'yolov7':
+                    old_img_w = old_img_h = self.img_size
+                    old_img_b = 1
 
-                        img = torch.from_numpy(img).to(self.device)
-                        img = img.half() if self.half else img.float()  # uint8 to fp16/32
-                        img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                        if img.ndimension() == 3:
-                            img = img.unsqueeze(0)
+                    img = torch.from_numpy(img).to(self.device)
+                    img = img.half() if self.half else img.float()  # uint8 to fp16/32
+                    img /= 255.0  # 0 - 255 to 0.0 - 1.0
+                    if img.ndimension() == 3:
+                        img = img.unsqueeze(0)
 
-                        # Inference
-                        t1 = time_synchronized()
-                        pred = self.model(img, augment=self.augment)[0]
-                        t2 = time_synchronized()
+                    # Inference
+                    t1 = time_synchronized()
+                    pred = self.model(img, augment=self.augment)[0]
+                    t2 = time_synchronized()
 
-                        # Apply NMS
-                        pred = non_max_suppression(pred, self.confidence_threshold, self.iou_threshold, classes=None,
-                                                   agnostic=True)
-                        t3 = time_synchronized()
+                    # Apply NMS
+                    pred = non_max_suppression(pred, self.confidence_threshold, self.iou_threshold, classes=None,
+                                               agnostic=True)
+                    t3 = time_synchronized()
 
-                        # Apply Classifier
-                        if self.classify:
-                            pred = apply_classifier(pred, self.modelc, img, cv_img)
+                    # Apply Classifier
+                    if self.classify:
+                        pred = apply_classifier(pred, self.modelc, img, cv_img)
 
-                        # Process detections
-                        bboxes = []
-                        probs = []
-                        labels = []
-                        for i, det in enumerate(pred):  # detections per image
+                    # Process detections
+                    bboxes = []
+                    probs = []
+                    labels = []
+                    for det in pred:
+                        if len(det):
                             gn = torch.tensor(cv_img.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                            if len(det):
-                                # Rescale boxes from img_size to im0 size
-                                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], cv_img.shape).round()
+                            # Rescale boxes from img_size to im0 size
+                            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], cv_img.shape).round()
 
-                                # Write results
-                                for *xyxy, conf, cls in reversed(det):
-                                    if self.debug:
-                                        label = f'{self.names[int(cls)]} {conf:.2f}'
-                                        plot_one_box(xyxy, cv_img, label=label, color=self.colors[int(cls)],
-                                                     line_thickness=1)
-                                    #xywh = (xyxy2xywh(torch.tensor(xyxy).view(-1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                                    bboxes.append(xyxy)
-                                    probs.append(conf)
-                                    labels.append(self.names[int(cls)])
+                            # Write results
+                            for *xyxy, conf, cls in reversed(det):
                                 if self.debug:
-                                    # publish bbox and label
-                                    self.publish_debug_img(cv_img)
-                        print(labels)
-                        for i in range(len(labels)):
-                            result = Object()
-                            result.name = labels[i].upper()
-                            result.probability = probs[i]
-                            roi = RegionOfInterest()
-                            roi.x_offset = int(bboxes[i][0])
-                            roi.y_offset = int(bboxes[i][1])
-                            roi.width = int(bboxes[i][2]) - int(bboxes[i][0])
-                            roi.height = int(bboxes[i][3]) - int(bboxes[i][1])
-                            result.roi = roi
-                            objects.append(result)
-                        if self.debug:
-                            rospy.logdebug("Detected Objects: %s", labels)
+                                    label = f'{self.names[int(cls)]} {conf:.2f}'
+                                    plot_one_box(xyxy, cv_img, label=label, color=self.colors[int(cls)],
+                                                 line_thickness=1)
+                                #xywh = (xyxy2xywh(torch.tensor(xyxy).view(-1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                                bboxes.append(xyxy)
+                                probs.append(conf)
+                                labels.append(self.names[int(cls)])
+                            if self.debug:
+                                # publish bbox and label
+                                self.publish_debug_img(cv_img)
+                    print(labels)
+                    for i in range(len(labels)):
+                        result = Object()
+                        result.name = labels[i].upper()
+                        result.probability = probs[i]
+                        roi = RegionOfInterest()
+                        roi.x_offset = int(bboxes[i][0])
+                        roi.y_offset = int(bboxes[i][1])
+                        roi.width = int(bboxes[i][2]) - int(bboxes[i][0])
+                        roi.height = int(bboxes[i][3]) - int(bboxes[i][1])
+                        result.roi = roi
+                        objects.append(result)
+                    if self.debug:
+                        rospy.logdebug("Detected Objects: %s", labels)
 
-                    else:
-                        bboxes, probs, labels = self.model.classify(cv_img)
+                else:
+                    bboxes, probs, labels = self.model.classify(cv_img)
 
-                    # Publish result_list
-                    result_list.objects = objects
-                    self.pub_result.publish(result_list)
+                # Publish result_list
+                result_list.objects = objects
+                self.pub_result.publish(result_list)
 
-                except CvBridgeError as e:
-                    rospy.logerr(e)
-                    return
+            except CvBridgeError as e:
+                rospy.logerr(e)
+                return
 
-            elif self.net == 'classification':
-                rospy.logwarn("TODO: MobileNet")
+        elif self.net == 'classification':
+            rospy.logwarn("TODO: MobileNet")
 
     def publish_debug_img(self, debug_img):
         debug_img = np.array(debug_img, dtype=np.uint8)

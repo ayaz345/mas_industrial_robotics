@@ -17,9 +17,7 @@ def knn(x, k):
     xx = torch.sum(x**2, dim=1, keepdim=True)
     pairwise_distance = -xx - inner - xx.transpose(2, 1)
 
-    # (batch_size, num_points, k)
-    idx = pairwise_distance.topk(k=k, dim=-1)[1]
-    return idx
+    return pairwise_distance.topk(k=k, dim=-1)[1]
 
 
 def get_graph_feature(x, k=20, idx=None, flag_cat=True):

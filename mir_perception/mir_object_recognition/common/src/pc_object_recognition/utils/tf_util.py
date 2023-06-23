@@ -365,12 +365,13 @@ def max_pool2d(inputs,
     with tf.variable_scope(scope) as sc:
         kernel_h, kernel_w = kernel_size
         stride_h, stride_w = stride
-        outputs = tf.nn.max_pool(inputs,
-                                 ksize=[1, kernel_h, kernel_w, 1],
-                                 strides=[1, stride_h, stride_w, 1],
-                                 padding=padding,
-                                 name=sc.name)
-        return outputs
+        return tf.nn.max_pool(
+            inputs,
+            ksize=[1, kernel_h, kernel_w, 1],
+            strides=[1, stride_h, stride_w, 1],
+            padding=padding,
+            name=sc.name,
+        )
 
 def avg_pool2d(inputs,
                kernel_size,
@@ -390,12 +391,13 @@ def avg_pool2d(inputs,
     with tf.variable_scope(scope) as sc:
         kernel_h, kernel_w = kernel_size
         stride_h, stride_w = stride
-        outputs = tf.nn.avg_pool(inputs,
-                                 ksize=[1, kernel_h, kernel_w, 1],
-                                 strides=[1, stride_h, stride_w, 1],
-                                 padding=padding,
-                                 name=sc.name)
-        return outputs
+        return tf.nn.avg_pool(
+            inputs,
+            ksize=[1, kernel_h, kernel_w, 1],
+            strides=[1, stride_h, stride_w, 1],
+            padding=padding,
+            name=sc.name,
+        )
 
 def max_pool3d(inputs,
                kernel_size,
@@ -415,12 +417,13 @@ def max_pool3d(inputs,
     with tf.variable_scope(scope) as sc:
         kernel_d, kernel_h, kernel_w = kernel_size
         stride_d, stride_h, stride_w = stride
-        outputs = tf.nn.max_pool3d(inputs,
-                                   ksize=[1, kernel_d, kernel_h, kernel_w, 1],
-                                   strides=[1, stride_d, stride_h, stride_w, 1],
-                                   padding=padding,
-                                   name=sc.name)
-        return outputs
+        return tf.nn.max_pool3d(
+            inputs,
+            ksize=[1, kernel_d, kernel_h, kernel_w, 1],
+            strides=[1, stride_d, stride_h, stride_w, 1],
+            padding=padding,
+            name=sc.name,
+        )
 
 def avg_pool3d(inputs,
                kernel_size,
@@ -440,12 +443,13 @@ def avg_pool3d(inputs,
     with tf.variable_scope(scope) as sc:
         kernel_d, kernel_h, kernel_w = kernel_size
         stride_d, stride_h, stride_w = stride
-        outputs = tf.nn.avg_pool3d(inputs,
-                                   ksize=[1, kernel_d, kernel_h, kernel_w, 1],
-                                   strides=[1, stride_d, stride_h, stride_w, 1],
-                                   padding=padding,
-                                   name=sc.name)
-        return outputs
+        return tf.nn.avg_pool3d(
+            inputs,
+            ksize=[1, kernel_d, kernel_h, kernel_w, 1],
+            strides=[1, stride_d, stride_h, stride_w, 1],
+            padding=padding,
+            name=sc.name,
+        )
 
 def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
     """ Batch normalization on convolutional maps and beyond...
@@ -610,10 +614,11 @@ def dropout(inputs,
       tensor variable
     """
     with tf.variable_scope(scope) as sc:
-        outputs = tf.cond(is_training,
-                          lambda: tf.nn.dropout(inputs, keep_prob, noise_shape),
-                          lambda: inputs)
-        return outputs
+        return tf.cond(
+            is_training,
+            lambda: tf.nn.dropout(inputs, keep_prob, noise_shape),
+            lambda: inputs,
+        )
 
 def pairwise_distance(point_cloud):
     """Compute pairwise distance of a point cloud.
@@ -681,8 +686,10 @@ def get_edge_feature(point_cloud, nn_idx, k=20):
 
     point_cloud_central = tf.tile(point_cloud_central, [1, 1, k, 1])
 
-    edge_feature = tf.concat([point_cloud_central, point_cloud_neighbors-point_cloud_central], axis=-1)
-    return edge_feature
+    return tf.concat(
+        [point_cloud_central, point_cloud_neighbors - point_cloud_central],
+        axis=-1,
+    )
 
 def get_session(gpu_idx, limit_gpu=True):
     '''
@@ -703,5 +710,4 @@ def get_session(gpu_idx, limit_gpu=True):
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_idx
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3" # Change according to your setup
-    sess = tf.Session(config=config)
-    return sess
+    return tf.Session(config=config)

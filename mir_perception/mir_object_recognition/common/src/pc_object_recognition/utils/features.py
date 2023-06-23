@@ -419,30 +419,25 @@ class FVRDDFeatureExtraction():
                 pointcloud, 0, 1)
             plane_error_rate = np.divide(
                 plane_outlier_error, plane_inlier_error)
-            features.append(plane_radius)
-            features.append(plane_error_rate)
-            features.append(plane_radial_density)
-
+            features.extend((plane_radius, plane_error_rate, plane_radial_density))
             bbox = self.calculate_bounding_box(pointcloud)
             centre_of_gravity_offset = self.calculate_centre_of_gravity_offset(
                 pointcloud)
 
-            # Bounding box does improve classifier
-            features.append(bbox[0])
-            features.append(bbox[1])
-            features.append(bbox[2])
-            features.append(centre_of_gravity_offset)
-
+            features.extend((bbox[0], bbox[1], bbox[2], centre_of_gravity_offset))
             # Add color feature
             colour_mean = self.calculate_mean_colour(pointcloud)
             colour_median = self.calculate_median_colour(pointcloud)
-            features.append(colour_mean[0])
-            features.append(colour_mean[1])
-            features.append(colour_mean[2])
-            features.append(colour_median[0])
-            features.append(colour_median[1])
-            features.append(colour_median[2])
-
+            features.extend(
+                (
+                    colour_mean[0],
+                    colour_mean[1],
+                    colour_mean[2],
+                    colour_median[0],
+                    colour_median[1],
+                    colour_median[2],
+                )
+            )
         rdd_features = np.asarray(features).flatten()
 
         # Use color feature
@@ -463,9 +458,7 @@ class FVRDDFeatureExtraction():
         fv = np.concatenate([fv_color, fv])
         fv = fv.flatten()
 
-        fvrdd_features = np.hstack((rdd_features, fv))
-
-        return fvrdd_features
+        return np.hstack((rdd_features, fv))
 
     def l2_normalize(self, v, dim=1):
         """
@@ -476,9 +469,7 @@ class FVRDDFeatureExtraction():
         :return: normalized v along dim
         """
         norm = np.linalg.norm(v, axis=dim)
-        if norm.all() == 0:
-            return v
-        return v / norm
+        return v if norm.all() == 0 else v / norm
 
     def get_3DmFV(self, points, w, mu, sigma, normalize=True):
         """

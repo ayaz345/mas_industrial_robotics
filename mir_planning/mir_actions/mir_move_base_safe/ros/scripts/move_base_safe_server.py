@@ -35,10 +35,7 @@ class AlignWithWorkspace(smach.State):  # inherit from the State base class
             self.client.wait_for_server()
 
     def execute(self, userdata):
-        if not self.align:
-            return "succeeded"
-        else:
-            return "succeeded"
+        return "succeeded"
 
         # goal = AlignWithWorkspaceActionGoal()
 
@@ -97,7 +94,7 @@ class PrepareArmForNextAction(smach.State):
         # giving feedback to the user
         feedback = GenericExecuteFeedback()
         feedback.current_state = "MOVE_ARM"
-        feedback.text = "[move_base_safe] Moving the arm to " + arm_goal
+        feedback.text = f"[move_base_safe] Moving the arm to {arm_goal}"
         userdata.feedback = feedback
         userdata.move_arm_to = arm_goal
         return "succeeded"
@@ -136,7 +133,7 @@ class SetupMoveBase(smach.State):
         base_orientation = Utils.get_value_of(
             userdata.goal.parameters, "destination_orientation"
         )
-        rospy.loginfo("Destination: " + str(base_goal))
+        rospy.loginfo(f"Destination: {str(base_goal)}")
 
         pose = None
         pose = param_server_utils.get_pose_from_param_server(base_goal)
@@ -151,7 +148,7 @@ class SetupMoveBase(smach.State):
         # giving feedback to the user
         feedback = GenericExecuteFeedback()
         feedback.current_state = "MOVE_BASE"
-        feedback.text = "[move_base_safe] moving the base to " + base_goal
+        feedback.text = f"[move_base_safe] moving the base to {base_goal}"
         userdata.feedback = feedback
         if pose:
             self.pub.publish(pose)

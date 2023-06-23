@@ -16,10 +16,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         destination = str(sys.argv[1]).upper()
-        next_action = ""
-        if len(sys.argv) > 2:
-            next_action = str(sys.argv[2]).upper()
-
+        next_action = str(sys.argv[2]).upper() if len(sys.argv) > 2 else ""
         goal = GenericExecuteGoal()
         goal.parameters.append(KeyValue(key="arm_safe_position", value="barrier_tape"))
         goal.parameters.append(KeyValue(key="destination_location", value=destination))
@@ -44,7 +41,7 @@ if __name__ == "__main__":
         elif state == GoalStatus.ABORTED:
             rospy.logerr("Action FAILED")
         else:
-            rospy.logwarn("State: " + str(state))
+            rospy.logwarn(f"State: {str(state)}")
             rospy.loginfo(client.get_result())
     else:
         rospy.logerr("Arguments were not received in the proper format !")

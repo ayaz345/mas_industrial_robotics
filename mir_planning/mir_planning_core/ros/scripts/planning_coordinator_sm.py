@@ -32,11 +32,7 @@ class re_add_goals(smach.State):
         rospy.sleep(0.2)
 
     def execute(self, userdata):
-        res = self.srv()
-        if res:
-            return "success"
-        else:
-            return "failure"
+        return "success" if (res := self.srv()) else "failure"
 
 
 # ===============================================================================
@@ -105,9 +101,7 @@ class execute_plan(smach.State):
     def execute(self, userdata):
         userdata.already_once_executed = True
         success = self.execute_plan(userdata.plan)
-        if not success:
-            return "failure"
-        return "success"
+        return "failure" if not success else "success"
 
     def execute_plan(self, plan):
         goal = ExecutePlanGoal()
@@ -140,14 +134,12 @@ class check_execution_already_started(smach.State):
 
     def execute(self, userdata):
         rospy.sleep(3.0)  # time for the system to recover for checking goals
-        if userdata.already_once_executed:
-            if userdata.check_execution_counter >= self.max_count:
-                return "success"
-            else:
-                userdata.check_execution_counter += 1
-                return "failure"
-        else:
+        if not userdata.already_once_executed:
             return "failure"
+        if userdata.check_execution_counter >= self.max_count:
+            return "success"
+        userdata.check_execution_counter += 1
+        return "failure"
 
 
 # ===============================================================================

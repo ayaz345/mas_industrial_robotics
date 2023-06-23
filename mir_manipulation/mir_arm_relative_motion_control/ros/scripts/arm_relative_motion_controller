@@ -98,10 +98,7 @@ class ArmRelativeMotionControl:
                 plan and fraction(percentage of total trajectory is planned)
          Sending last joint configuration from cartesian plan to moveit to plan in joint space
         """
-        waypoints = []
-        waypoints.append(current_pose)
-        waypoints.append(goal_pose)
-
+        waypoints = [current_pose, goal_pose]
         (plan, fraction) = self.group.compute_cartesian_path(waypoints, 0.01, 0.0)
         planned_trajectory_length = len(plan.joint_trajectory.points)
 
@@ -155,8 +152,7 @@ class ArmRelativeMotionControl:
         )
 
         wrist_wrt_base = tool_tip_wrt_base * desired_tip_relative_motion
-        desired_wrist_wrt_base = self.matrix_to_pose(self.target_frame, wrist_wrt_base)
-        return desired_wrist_wrt_base
+        return self.matrix_to_pose(self.target_frame, wrist_wrt_base)
 
     def move_arm_in_joint_space(self, target_joint_angles):
 
@@ -165,9 +161,8 @@ class ArmRelativeMotionControl:
         error_code = self.group.go(wait=True)
         if error_code == moveit_msgs.msg.MoveItErrorCodes.SUCCESS:
             return "succeeded"
-        else:
-            rospy.logerr("Arm movement failed with error code: %d", error_code)
-            return "failed"
+        rospy.logerr("Arm movement failed with error code: %d", error_code)
+        return "failed"
 
     def matrix_to_pose(self, frame, matrix):
         """

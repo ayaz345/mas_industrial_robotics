@@ -20,7 +20,7 @@ class Utils(object):
         action_param_list = string[1:-1].upper().split()
         name = action_param_list[0]
         params = [
-            KeyValue("param_" + str(i + 1), param)
+            KeyValue(f"param_{str(i + 1)}", param)
             for i, param in enumerate(action_param_list[2:])
         ]
         params.insert(0, KeyValue("robot_name", action_param_list[1]))

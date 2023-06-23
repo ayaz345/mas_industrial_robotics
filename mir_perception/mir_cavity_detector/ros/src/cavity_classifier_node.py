@@ -40,30 +40,29 @@ class CavityRecognizer():
 
     def image_recognition_cb(self, img_msg):
 
-        if img_msg.images:
-            result_list = ObjectList()
-            cavities_labels = []
-            rospy.loginfo("[{}] images received: {} ".format(
-                len(img_msg.images), self.model_name))
-            now = datetime.now()
-            concat_images = np.zeros((96, 96))
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            count = 0
+        if not img_msg.images:
+            return
+        result_list = ObjectList()
+        cavities_labels = []
+        rospy.loginfo(f"[{len(img_msg.images)}] images received: {self.model_name} ")
+        now = datetime.now()
+        concat_images = np.zeros((96, 96))
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        count = 0
 
-            for img in img_msg.images:
+        for img in img_msg.images:
 
-                print("count ", count)
+            print("count ", count)
 
-                try:
-                    result = Object()
-                    time = now.strftime("%H:%M:%S")
-                    cv_image = self.cvbridge.imgmsg_to_cv2(img, "bgr8")
-                    label = self.model.predict_one_label(cv_image)
-                    cv2.imwrite("/tmp/mobileNet_"+str(label) +
-                                str(time)+".jpg", cv_image)
-                    cv2.putText(cv_image, str(label), (0, 20), font,
-                                1, (200, 255, 155), 2, cv2.LINE_AA)
-                    '''                    
+            try:
+                result = Object()
+                time = now.strftime("%H:%M:%S")
+                cv_image = self.cvbridge.imgmsg_to_cv2(img, "bgr8")
+                label = self.model.predict_one_label(cv_image)
+                cv2.imwrite(f"/tmp/mobileNet_{str(label)}{time}.jpg", cv_image)
+                cv2.putText(cv_image, str(label), (0, 20), font,
+                            1, (200, 255, 155), 2, cv2.LINE_AA)
+                '''                    
                     if count == 0:
                         cv2.resize(cv_image, (96,96))
                         concat_images = cv_image
@@ -71,26 +70,23 @@ class CavityRecognizer():
                         cv2.resize(cv_image, (96,96))
                         concat_images = np.hstack((concat_images, cv_image))
                     '''
-                    # self.publish_debug_image(cv_image)
+                # self.publish_debug_image(cv_image)
 
-                    count += 1
-                    print("predicted label ", label)
-                    # cavities_labels.append(label)
-                    result.name = label
-                    cavities_labels.append(result)
-                # Publish result_list
-                    #print ("cavities_labels ", cavities_labels)
+                count += 1
+                print("predicted label ", label)
+                # cavities_labels.append(label)
+                result.name = label
+                cavities_labels.append(result)
+            except CvBridgeError as e:
+                print("inside except cv bridge")
+                print(e)
+                return
 
-                except CvBridgeError as e:
-                    print("inside except cv bridge")
-                    print(e)
-                    return
-
-            cv2.imwrite("/tmp/classifier_image.jpg", concat_images)
-            # self.publish_debug_img(concat_images)
-            # self.pub_classifier_debug_image.publish(concat_images)
-            result_list.objects = cavities_labels
-            self.pub_result.publish(result_list)
+        cv2.imwrite("/tmp/classifier_image.jpg", concat_images)
+        # self.publish_debug_img(concat_images)
+        # self.pub_classifier_debug_image.publish(concat_images)
+        result_list.objects = cavities_labels
+        self.pub_result.publish(result_list)
 
     def publish_debug_img(self, debug_img):
         #debug_img = np.array(debug_img, dtype=np.uint8)

@@ -19,7 +19,7 @@ class WaitForEventFromUser(smach.State):
     def execute(self, userdata):
         rospy.loginfo("Have you placed the mockup pose? press y/n ")
         input_from_user = input()
-        if ('y' == input_from_user):
+        if input_from_user == 'y':
             rospy.loginfo("Received YES .. moving arm ")
             return 'success'
         else:

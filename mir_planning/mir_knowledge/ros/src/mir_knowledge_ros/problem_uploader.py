@@ -92,14 +92,14 @@ class ProblemUploader(object):
         """
         ki_list = []
         for instance_type, instance_names in instances.items():
-            for instance_name in instance_names:
-                ki_list.append(
-                    KnowledgeItem(
-                        knowledge_type=KnowledgeItem.INSTANCE,
-                        instance_type=instance_type,
-                        instance_name=instance_name.upper(),
-                    )
+            ki_list.extend(
+                KnowledgeItem(
+                    knowledge_type=KnowledgeItem.INSTANCE,
+                    instance_type=instance_type,
+                    instance_name=instance_name.upper(),
                 )
+                for instance_name in instance_names
+            )
         return ki_list
 
     @staticmethod
@@ -112,16 +112,14 @@ class ProblemUploader(object):
         :rtype: list of rosplan_knowledge_msgs.msg.KnowledgeItem
 
         """
-        ki_list = []
-        for attr_name, kv_list in facts:
-            ki_list.append(
-                KnowledgeItem(
-                    knowledge_type=KnowledgeItem.FACT,
-                    attribute_name=attr_name,
-                    values=[KeyValue(k, v.upper()) for k, v in kv_list],
-                )
+        return [
+            KnowledgeItem(
+                knowledge_type=KnowledgeItem.FACT,
+                attribute_name=attr_name,
+                values=[KeyValue(k, v.upper()) for k, v in kv_list],
             )
-        return ki_list
+            for attr_name, kv_list in facts
+        ]
 
     @staticmethod
     def update_kb_array(ki_list, update_type):
@@ -136,7 +134,7 @@ class ProblemUploader(object):
 
         """
         update_kb_topic = "/rosplan_knowledge_base/update_array"
-        rospy.loginfo("Waiting for " + update_kb_topic)
+        rospy.loginfo(f"Waiting for {update_kb_topic}")
         rospy.wait_for_service(update_kb_topic)
 
         try:
@@ -150,7 +148,7 @@ class ProblemUploader(object):
                 rospy.logerr("Upload failed")
             return response.success
         except rospy.ServiceException as e:
-            rospy.logerr("Service call failed: %s" % e)
+            rospy.logerr(f"Service call failed: {e}")
 
     @staticmethod
     def parse_objects(pddl_objects):
@@ -181,7 +179,7 @@ class ProblemUploader(object):
             if string == "-":
                 type_name = objects.pop(0)
                 obj_dict[type_name] = curr_list
-                curr_list = list()
+                curr_list = []
             else:
                 curr_list.append(string)
         return obj_dict
@@ -211,11 +209,7 @@ class ProblemUploader(object):
                 self._attr_to_obj_type[attr_name]
             ):
                 continue
-            kv_list = [
-                (key, value)
-
-                for key, value in zip(self._attr_to_obj_type[attr_name], fact[1:])
-            ]
+            kv_list = list(zip(self._attr_to_obj_type[attr_name], fact[1:]))
             facts.append((attr_name, kv_list))
         return facts
 
@@ -233,7 +227,7 @@ class ProblemUploader(object):
 
         """
         domain_attr_kb_topic = "/rosplan_knowledge_base/domain/predicates"
-        rospy.loginfo("Waiting for " + domain_attr_kb_topic)
+        rospy.loginfo(f"Waiting for {domain_attr_kb_topic}")
         rospy.wait_for_service(domain_attr_kb_topic)
         rospy.loginfo("Wait complete.")
         response = None
@@ -243,13 +237,13 @@ class ProblemUploader(object):
             )
             response = get_domain_attr()
         except rospy.ServiceException as e:
-            rospy.logerr("Service call failed: %s" % e)
+            rospy.logerr(f"Service call failed: {e}")
             return None
 
-        attr_to_obj_type = {}
-        for item in response.items:
-            attr_to_obj_type[item.name] = [param.key for param in item.typed_parameters]
-        return attr_to_obj_type
+        return {
+            item.name: [param.key for param in item.typed_parameters]
+            for item in response.items
+        }
 
     @staticmethod
     def make_srv_req_to_KB(
@@ -337,7 +331,7 @@ class ProblemUploader(object):
             msg.values = [KeyValue(i[0], i[1].upper()) for i in values]
 
         update_kb_topic = "/rosplan_knowledge_base/update"
-        rospy.loginfo("Waiting for " + update_kb_topic)
+        rospy.loginfo(f"Waiting for {update_kb_topic}")
         rospy.wait_for_service(update_kb_topic)
 
         try:
@@ -348,7 +342,7 @@ class ProblemUploader(object):
                 response = update_kb(Req.ADD_GOAL, msg)
 
         except rospy.ServiceException as e:
-            rospy.logerr("Service call failed: %s" % e)
+            rospy.logerr(f"Service call failed: {e}")
 
         if response.success:
             rospy.loginfo("KB updated successfully.")

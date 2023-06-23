@@ -23,10 +23,7 @@ class place_object(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(15.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class pick_object(smach.State):
@@ -41,10 +38,7 @@ class pick_object(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(30.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class perceive_location(smach.State):
@@ -60,10 +54,7 @@ class perceive_location(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(30.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class move_base(smach.State):
@@ -78,10 +69,9 @@ class move_base(smach.State):
 
 
     def execute(self, userdata):
-        self.goal.parameters = []
-        self.goal.parameters.append(
+        self.goal.parameters = [
             KeyValue(key="arm_safe_position", value="barrier_tape")
-        )
+        ]
         # if location is sent as an argument to this state, set it here
         if self.destination_location is not None:
             self.goal.parameters.append(
@@ -106,10 +96,7 @@ class move_base(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(int(15.0)))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class insert_object(smach.State):
@@ -127,10 +114,7 @@ class insert_object(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(int(30.0)))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class stage_object(smach.State):
@@ -168,10 +152,7 @@ class stage_object(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(30.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class unstage_object(smach.State):
@@ -209,10 +190,7 @@ class unstage_object(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(30.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"
 
 
 class perceive_cavity(smach.State):
@@ -227,7 +205,4 @@ class perceive_cavity(smach.State):
         self.client.send_goal(self.goal)
         self.client.wait_for_result(rospy.Duration.from_sec(30.0))
         state = self.client.get_state()
-        if state == GoalStatus.SUCCEEDED:
-            return "success"
-        else:
-            return "failed"
+        return "success" if state == GoalStatus.SUCCEEDED else "failed"

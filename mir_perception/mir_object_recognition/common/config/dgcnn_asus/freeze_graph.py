@@ -68,10 +68,9 @@ def _has_no_variables(sess):
   Returns:
     Bool.
   """
-  for op in sess.graph.get_operations():
-    if op.type.startswith("Variable") or op.type.endswith("VariableOp"):
-      return False
-  return True
+  return not any(
+      op.type.startswith("Variable") or op.type.endswith("VariableOp")
+      for op in sess.graph.get_operations())
 
 
 def freeze_graph_with_def_protos(input_graph_def,
@@ -125,8 +124,7 @@ def freeze_graph_with_def_protos(input_graph_def,
   # 'input_checkpoint' may be a prefix if we're using Saver V2 format
   if (not input_saved_model_dir and
       not checkpoint_management.checkpoint_exists(input_checkpoint)):
-    raise ValueError("Input checkpoint '" + input_checkpoint +
-                     "' doesn't exist!")
+    raise ValueError(f"Input checkpoint '{input_checkpoint}' doesn't exist!")
 
   if not output_node_names:
     raise ValueError(
@@ -176,7 +174,7 @@ def freeze_graph_with_def_protos(input_graph_def,
 
       for key in var_to_shape_map:
         try:
-          tensor = sess.graph.get_tensor_by_name(key + ":0")
+          tensor = sess.graph.get_tensor_by_name(f"{key}:0")
           if any(key in name for name in all_partition_variable_names):
             has_partition_var = True
         except KeyError:
@@ -197,12 +195,10 @@ def freeze_graph_with_def_protos(input_graph_def,
               "Models containing partition variables cannot be converted "
               "from checkpoint files. Please pass in a SavedModel using "
               "the flag --input_saved_model_dir.")
-        # Models that have been frozen previously do not contain Variables.
         elif _has_no_variables(sess):
           raise ValueError(
               "No variables were found in this model. It is likely the model "
               "was frozen previously. You cannot freeze a graph twice.")
-          return 0
         else:
           raise e
 
@@ -243,7 +239,7 @@ def freeze_graph_with_def_protos(input_graph_def,
 def _parse_input_graph_proto(input_graph, input_binary):
   """Parses input tensorflow graph into GraphDef proto."""
   if not gfile.Exists(input_graph):
-    raise IOError("Input graph file '" + input_graph + "' does not exist!")
+    raise IOError(f"Input graph file '{input_graph}' does not exist!")
   input_graph_def = graph_pb2.GraphDef()
   mode = "rb" if input_binary else "r"
   with gfile.GFile(input_graph, mode) as f:
@@ -257,7 +253,7 @@ def _parse_input_graph_proto(input_graph, input_binary):
 def _parse_input_meta_graph_proto(input_graph, input_binary):
   """Parses input tensorflow graph into MetaGraphDef proto."""
   if not gfile.Exists(input_graph):
-    raise IOError("Input meta graph file '" + input_graph + "' does not exist!")
+    raise IOError(f"Input meta graph file '{input_graph}' does not exist!")
   input_meta_graph_def = MetaGraphDef()
   mode = "rb" if input_binary else "r"
   with gfile.GFile(input_graph, mode) as f:
@@ -265,14 +261,14 @@ def _parse_input_meta_graph_proto(input_graph, input_binary):
       input_meta_graph_def.ParseFromString(f.read())
     else:
       text_format.Merge(f.read(), input_meta_graph_def)
-  print("Loaded meta graph file '" + input_graph)
+  print(f"Loaded meta graph file '{input_graph}")
   return input_meta_graph_def
 
 
 def _parse_input_saver_proto(input_saver, input_binary):
   """Parses input tensorflow Saver into SaverDef proto."""
   if not gfile.Exists(input_saver):
-    raise IOError("Input saver file '" + input_saver + "' does not exist!")
+    raise IOError(f"Input saver file '{input_saver}' does not exist!")
   mode = "rb" if input_binary else "r"
   with gfile.GFile(input_saver, mode) as f:
     saver_def = saver_pb2.SaverDef()

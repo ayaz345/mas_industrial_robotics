@@ -79,8 +79,7 @@ class PlannerWrapper(object):
         print(command)
 
         if self._run_command_in_tmp(command.split(), fast_mode):
-            plan_file = self._find_correct_plan_file()
-            if plan_file:
+            if plan_file := self._find_correct_plan_file():
                 print("[planner_wrapper] Plan call was success")
 
                 # read plan file
@@ -161,7 +160,7 @@ class PlannerWrapper(object):
         plan_file_list = [
             filename for filename in files_list if "task_plan" in filename
         ]
-        if len(plan_file_list) == 0:
+        if not plan_file_list:
             print("[planner_wrapper] No plan files found.")
             return None
         best_plan = sorted(plan_file_list, key=lambda x: int(x.split(".")[-1]))[-1]
@@ -221,10 +220,10 @@ class PlannerWrapper(object):
         :returns: bool
 
         """
-        for file_name in os.listdir(self._plan_dir):
-            if self._plan_file_name in file_name:
-                return True
-        return False
+        return any(
+            self._plan_file_name in file_name
+            for file_name in os.listdir(self._plan_dir)
+        )
 
 
 # ==============================================================================
@@ -264,10 +263,9 @@ def get_domain_and_problem_file():
     common_dir = os.path.dirname(code_dir)
     domain_file = os.path.join(common_dir, "pddl/domain.pddl")
     problem_file = os.path.join(common_dir, "pddl/problem.pddl")
-    files = {"domain": None, "problem": None}
     with open(domain_file, "r") as file_handle:
         _ = file_handle.read()
-    files["domain"] = domain_file
+    files = {"problem": None, "domain": domain_file}
     with open(problem_file, "r") as file_handle:
         _ = file_handle.read()
     files["problem"] = problem_file
@@ -288,7 +286,7 @@ if __name__ == "__main__":
     # initialise planner wrapper object
     PLANNER_WRAPPER = PlannerWrapper(PLANNER_COMMANDS)
 
-    # try to plan with the default problem and domain file
-    TASK_PLAN = PLANNER_WRAPPER.plan("lama", FILES["domain"], FILES["problem"])
-    if TASK_PLAN:
+    if TASK_PLAN := PLANNER_WRAPPER.plan(
+        "lama", FILES["domain"], FILES["problem"]
+    ):
         print(len(TASK_PLAN))

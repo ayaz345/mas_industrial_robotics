@@ -11,7 +11,7 @@ data = []
 def callback(msg,args):
     if msg.cov_minor > 1e-5:
         data.append([msg.cov_minor, msg.cov_major])
-        print ("length of data = " + str(len(data)))
+        print(f"length of data = {len(data)}")
         np.save(rospkg.RosPack().get_path('ppt_3d') + '/scripts/covariance_data/data/'+args[0]+".npy", np.array(data))
     
 if __name__ == '__main__':

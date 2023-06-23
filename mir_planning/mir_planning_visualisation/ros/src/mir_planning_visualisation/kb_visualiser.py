@@ -68,7 +68,7 @@ class KnowledgeBaseVisualiser(object):
 
     def _get_response_from_kb(self, server_topic):
         if self._debug:
-            rospy.loginfo("Waiting for service: " + server_topic)
+            rospy.loginfo(f"Waiting for service: {server_topic}")
         rospy.wait_for_service(server_topic)
         try:
             get_response = rospy.ServiceProxy(server_topic, GetAttributeService)
@@ -76,43 +76,35 @@ class KnowledgeBaseVisualiser(object):
             if len(response.attributes) == 0:
                 # rospy.logwarn("No propositions in KB")
                 return None
-            else:
-                if self._debug:
-                    rospy.loginfo(
-                        "Found propositions: " + str(len(response.attributes))
-                    )
-                facts = [
-                    attribute
-                    for attribute in response.attributes
-                    if attribute.knowledge_type == KnowledgeItem.FACT
-                ]
-                resp = [
-                    (fact.attribute_name, {kv.key: kv.value for kv in fact.values})
-                    for fact in facts
-                ]
-                return resp
+            if self._debug:
+                rospy.loginfo(f"Found propositions: {len(response.attributes)}")
+            facts = [
+                attribute
+                for attribute in response.attributes
+                if attribute.knowledge_type == KnowledgeItem.FACT
+            ]
+            return [
+                (fact.attribute_name, {kv.key: kv.value for kv in fact.values})
+                for fact in facts
+            ]
         except rospy.ServiceException as e:
-            rospy.logerr("Service call failed: %s" % e)
+            rospy.logerr(f"Service call failed: {e}")
             return None
 
     def _get_markers_from_data(self, data):
-        markers = []
-
         obj_on_ws = []
         for ws_name, obj_list in data["obj_on_ws"].items():
             obj_markers = self._utils.get_markers_from_obj_on_ws(
                 obj_list, ws_name, data["obj_in_container"]
             )
             obj_on_ws.extend(obj_markers)
-        markers.append(obj_on_ws)
-
+        markers = [obj_on_ws]
         if self._visualise_robot:
             obj_on_robot_markers = []
             for platform, obj in data["obj_on_robot"].items():
-                obj_marker = self._utils.get_markers_from_obj_on_robot(
+                if obj_marker := self._utils.get_markers_from_obj_on_robot(
                     obj, platform, data["robot_ws"]
-                )
-                if obj_marker:
+                ):
                     obj_on_robot_markers.append(obj_marker)
             markers.append(obj_on_robot_markers)
 
@@ -187,11 +179,11 @@ class KnowledgeBaseVisualiser(object):
                 if "peg" in fact[1]:
                     goal_obj_in_container[container].append(fact[1]["peg"])
 
-        data = {}
-        data["obj_on_ws"] = obj_on_ws
-        data["robot_ws"] = robot_ws
-        data["obj_on_robot"] = obj_on_robot
-        data["obj_in_container"] = obj_in_container
-        data["goal_obj_on_ws"] = goal_obj_on_ws
-        data["goal_obj_in_container"] = goal_obj_in_container
-        return data
+        return {
+            "obj_on_ws": obj_on_ws,
+            "robot_ws": robot_ws,
+            "obj_on_robot": obj_on_robot,
+            "obj_in_container": obj_in_container,
+            "goal_obj_on_ws": goal_obj_on_ws,
+            "goal_obj_in_container": goal_obj_in_container,
+        }

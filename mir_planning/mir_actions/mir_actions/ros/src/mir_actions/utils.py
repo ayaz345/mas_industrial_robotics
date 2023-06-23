@@ -26,10 +26,9 @@ class Utils(object):
         :rtype: str | None
 
         """
-        for param in params:
-            if desired_key == param.key:
-                return param.value
-        return None
+        return next(
+            (param.value for param in params if desired_key == param.key), None
+        )
 
     @staticmethod
     def get_orientation_from_param_server(orientation_goal, frame_id="map",
@@ -39,9 +38,7 @@ class Utils(object):
         parameter_name = param_ns + orientation_goal
         if not rospy.has_param(parameter_name):
             rospy.logerr(
-                "parameter '{}' does not exist on ROS Parameter Server, aborting...".format(
-                    parameter_name
-                )
+                f"parameter '{parameter_name}' does not exist on ROS Parameter Server, aborting..."
             )
             return None
         else:
@@ -79,9 +76,7 @@ class Utils(object):
         parameter_name = param_ns + navigation_goal
         if not rospy.has_param(parameter_name):
             rospy.logerr(
-                "parameter '{}' does not exist on ROS Parameter Server, aborting...".format(
-                    parameter_name
-                )
+                f"parameter '{parameter_name}' does not exist on ROS Parameter Server, aborting..."
             )
             return None
         else:
@@ -114,8 +109,8 @@ class Utils(object):
         return type: float
         """
 
-        print("pose1: {}".format(pose1.pose.position))
-        print("pose2: {}".format(pose2.pose.position))
+        print(f"pose1: {pose1.pose.position}")
+        print(f"pose2: {pose2.pose.position}")
 
         return math.sqrt(
             math.pow(pose1.pose.position.x - pose2.pose.position.x, 2) +

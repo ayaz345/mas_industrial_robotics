@@ -38,16 +38,16 @@ if __name__ == "__main__":
         rospy.loginfo("Action SUCCESS")
         print("Perceived objects:")
         for i in range(20):
-            obj_key = "obj_" + str(i+1)
-            obj_key_id = "obj_" + str(i+1) + "_id"
+            obj_key = f"obj_{str(i + 1)}"
+            obj_key_id = f"obj_{str(i + 1)}_id"
             obj_name = Utils.get_value_of(result.results, obj_key)
-            if obj_name == None:
+            if obj_name is None:
                 break
-            
+
             obj_id = Utils.get_value_of(result.results, obj_key_id)
             print(obj_name.ljust(15), str(obj_id).ljust(3))
     elif state == GoalStatus.ABORTED:
         rospy.logerr("Action FAILED")
     else:
-        rospy.logwarn("State: " + str(state))
+        rospy.logwarn(f"State: {str(state)}")
         rospy.loginfo(result)

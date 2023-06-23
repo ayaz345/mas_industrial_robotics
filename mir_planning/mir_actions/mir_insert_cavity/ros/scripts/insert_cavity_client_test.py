@@ -41,7 +41,7 @@ if __name__ == "__main__":
         elif state == GoalStatus.ABORTED:
             rospy.logerr("Action FAILED")
         else:
-            rospy.logwarn("State: " + str(state))
+            rospy.logwarn(f"State: {str(state)}")
             rospy.loginfo(result)
     else:
         rospy.logerr("Arguments were not received in the proper format !")

@@ -132,7 +132,7 @@ class PopulateResultWithObjects(smach.State):
     def execute(self, userdata):
         result = GenericExecuteResult()
         for i, obj in enumerate(self.perceived_obj_names):
-            result.results.append(KeyValue(key="obj_" + str(i + 1), value=obj))
+            result.results.append(KeyValue(key=f"obj_{str(i + 1)}", value=obj))
         userdata.result = result
 
         userdata.feedback = GenericExecuteFeedback()  # place holder

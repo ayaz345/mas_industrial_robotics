@@ -16,8 +16,8 @@ class mobileNet:
 		# graph = self.load_graph(model_path)
 		preprocessed_image = self.preprocess_image(image)
 
-		input_name = "import/" + self.input_layer
-		output_name = "import/" + self.output_layer
+		input_name = f"import/{self.input_layer}"
+		output_name = f"import/{self.output_layer}"
 		input_operation = self.graph.get_operation_by_name(input_name)
 		output_operation = self.graph.get_operation_by_name(output_name)
 
@@ -73,6 +73,4 @@ class mobileNet:
 		normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
 
 		sess = tf.Session()
-		result = sess.run(normalized)
-
-		return result
+		return sess.run(normalized)

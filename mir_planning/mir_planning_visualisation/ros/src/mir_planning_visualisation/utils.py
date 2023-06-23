@@ -30,9 +30,7 @@ class Utils(object):
             raise Exception("Model path not provided.")
         if not os.path.exists(self._model_path):
             raise Exception(
-                "Invalid model path provided. "
-                + str(self._model_path)
-                + " does not exist"
+                f"Invalid model path provided. {str(self._model_path)} does not exist"
             )
 
         marker_config_file = rospy.get_param("~model_to_marker_config", None)
@@ -49,9 +47,8 @@ class Utils(object):
         if navigation_goals is None:
             raise Exception("Navigation goal file not provided.")
 
-        # class variables
+        self._ws_pose = {}
         self.marker_counter = 0
-        self._ws_pose = dict()
         # offset nav goal based on size of robot to initialise workstation poses
         for ws, pos in navigation_goals.items():
             delta_x = math.cos(pos[2]) * self._base_link_to_ws_edge
@@ -154,16 +151,14 @@ class Utils(object):
             )
         }
 
-        offset = obj_pose_offsets.get(platform.lower(), None)
-        if offset:
+        if offset := obj_pose_offsets.get(platform.lower(), None):
             delta_x = (math.cos(yaw) * offset[0]) + (-math.sin(yaw) * offset[1])
             delta_y = (math.sin(yaw) * offset[0]) + (math.cos(yaw) * offset[1])
-            marker = self.get_marker_from_obj_name_and_pos(
+            return self.get_marker_from_obj_name_and_pos(
                 obj, x=x + delta_x, y=y + delta_y, z=0.11, yaw=yaw
             )
-            return marker
         else:
-            rospy.logwarn("Object " + obj + " on unknown platform " + platform)
+            rospy.logwarn(f"Object {obj} on unknown platform {platform}")
 
     def get_markers_from_obj_on_ws(
         self, obj_list, ws_name, container_to_obj=None, is_goal=False
@@ -205,7 +200,7 @@ class Utils(object):
             obj_pose_offsets = [(0.35, y) for y in [0.0, 0.15, -0.15, 0.3, -0.3]]
 
         if len(obj_list) > 10:
-            rospy.logwarn("Only showing 10 objects on " + str(ws))
+            rospy.logwarn(f"Only showing 10 objects on {str(ws)}")
         for obj, offset in zip(obj_list, obj_pose_offsets):
             delta_x = (math.cos(pos[2]) * offset[0]) + (-math.sin(pos[2]) * offset[1])
             delta_y = (math.sin(pos[2]) * offset[0]) + (math.cos(pos[2]) * offset[1])
@@ -264,15 +259,13 @@ class Utils(object):
         model_name = model_name.lower()
         marker = Marker()
         if model_name not in self.marker_config:
-            rospy.logwarn(
-                "Could not find " + str(model_name) + ". Using default marker"
-            )
+            rospy.logwarn(f"Could not find {str(model_name)}. Using default marker")
             marker.type = Marker.CUBE
             config = self.marker_config["default"]
         else:
             config = self.marker_config[model_name]
             file_path = os.path.join(self._model_pkg_path, config["file_name"])
-            resource_file = "package://" + file_path
+            resource_file = f"package://{file_path}"
             marker.type = Marker.MESH_RESOURCE
             marker.mesh_resource = resource_file
 
@@ -325,9 +318,7 @@ class Utils(object):
         .. note:: ``num_of_points`` should be greater or equal to 5
 
         """
-        if num_of_points < 5:
-            num_of_points = 5
-
+        num_of_points = max(num_of_points, 5)
         point_a = self._ws_pose.get(src, None)
         point_b = self._ws_pose.get(dest, None)
         if point_a is None or point_b is None:

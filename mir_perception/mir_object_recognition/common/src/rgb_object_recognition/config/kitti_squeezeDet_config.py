@@ -100,9 +100,6 @@ def set_anchors(mc):
         ),
         (H, W, B, 1)
     )
-    anchors = np.reshape(
-        np.concatenate((center_x, center_y, anchor_shapes), axis=3),
-        (-1, 4)
+    return np.reshape(
+        np.concatenate((center_x, center_y, anchor_shapes), axis=3), (-1, 4)
     )
-
-    return anchors

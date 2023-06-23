@@ -8,27 +8,29 @@ import numpy as np
 from easydict import EasyDict as edict
 
 def base_model_config(dataset='PASCAL_VOC'):
-    assert dataset.upper()=='PASCAL_VOC' or dataset.upper()=='KITTI', \
-        'Currently only support PASCAL_VOC or KITTI dataset'
+    assert dataset.upper() in [
+        'PASCAL_VOC',
+        'KITTI',
+    ], 'Currently only support PASCAL_VOC or KITTI dataset'
 
     cfg = edict()
 
     # Dataset used to train/val/test model. Now support PASCAL_VOC or KITTI
     cfg.DATASET = dataset.upper()
 
-    if cfg.DATASET == 'PASCAL_VOC':
-        # object categories to classify
-        cfg.CLASS_NAMES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-                             'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
-                             'horse', 'motorbike', 'person', 'pottedplant', 'sheep',
-                             'sofa', 'train', 'tvmonitor')
-    elif cfg.DATASET == 'KITTI':
+    if cfg.DATASET == 'KITTI':
         cfg.CLASS_NAMES =('s40_40_G', 's40_40_B', 'r20','motor',
                             'm30', 'm20_100', 'm20', 'f20_20_G', 'f20_20_B',
                             'em_02', 'em_01', 'distance_tube', 'container_box_red',
                             'container_box_blue', 'bearing_box_ax16',
                             'bearing_box_ax01', 'bearing', 'axis')
 
+    elif cfg.DATASET == 'PASCAL_VOC':
+        # object categories to classify
+        cfg.CLASS_NAMES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+                             'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
+                             'horse', 'motorbike', 'person', 'pottedplant', 'sheep',
+                             'sofa', 'train', 'tvmonitor')
     # number of categories to classify
     cfg.CLASSES = len(cfg.CLASS_NAMES)    
 
@@ -83,7 +85,7 @@ def base_model_config(dataset='PASCAL_VOC'):
 
     # loss coefficient for bounding box regression
     cfg.LOSS_COEF_BBOX = 10.0
-                             
+
     # reduce step size after this many steps
     cfg.DECAY_STEPS = 10000
 

@@ -58,7 +58,7 @@ class KnowledgeBaseAnalizer(object):
                 rospy.loginfo("There are pending goals in the knowledge base")
                 event_out.data = "e_goals_available"
         except rospy.ServiceException as e:
-            rospy.logerr("Service call failed: %s" % e)
+            rospy.logerr(f"Service call failed: {e}")
         rospy.loginfo("Publishing pending goals response")
         self.pending_goals_event_out.publish(event_out)
 

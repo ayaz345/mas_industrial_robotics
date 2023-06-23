@@ -50,10 +50,7 @@ class move_base_safe(smach.State):
         self.client.send_goal(goal)
         self.client.wait_for_result(rospy.Duration.from_sec(self.timeout))
         res = self.client.get_result()
-        if res and res.success:
-            return "succeeded"
-        else:
-            return "failed"
+        return "succeeded" if res and res.success else "failed"
 
 
 class place_object(smach.State):
@@ -77,10 +74,7 @@ class place_object(smach.State):
         self.client.send_goal(goal)
         self.client.wait_for_result(rospy.Duration.from_sec(self.timeout))
         res = self.client.get_result()
-        if res and res.success:
-            return "succeeded"
-        else:
-            return "failed"
+        return "succeeded" if res and res.success else "failed"
 
 
 class my_pause(smach.State):
@@ -134,9 +128,7 @@ class wait_for_object(smach.State):
         self.img_editor.publish("e_stop")
         self.event_out.publish("e_stop")
 
-        if self.result.data != "e_change":
-            return "failed"
-        return "succeeded"
+        return "failed" if self.result.data != "e_change" else "succeeded"
 
     def event_cb(self, msg):
         self.result = msg
@@ -150,10 +142,7 @@ class for_testing(smach.State):
         # TODO TIMING
         rospy.logerr("THERE IS SOMETHING NOT FINISHED")
         rospy.sleep(1.0)
-        if True:
-            return "succeeded"
-        else:
-            return "failed"
+        return "succeeded"
 
 
 class cbt_release(smach.State):
@@ -236,9 +225,7 @@ class check_gripper_joint_values(smach.State):
         self.val = True
         while not self.result:
             rospy.sleep(0.1)
-        if self.result.current_pos > 2.5:
-            return "failed"
-        return "succeeded"
+        return "failed" if self.result.current_pos > 2.5 else "succeeded"
 
     def event_cb(self, msg):
         if self.val:

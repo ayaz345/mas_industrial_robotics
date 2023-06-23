@@ -90,8 +90,10 @@ def recursive_nms(boxes, probs, threshold, form='center'):
       keep: array of True or False.
     """
 
-    assert form == 'center' or form == 'diagonal', \
-        'bounding box format not accepted: {}.'.format(form)
+    assert form in [
+        'center',
+        'diagonal',
+    ], 'bounding box format not accepted: {}.'.format(form)
 
     if form == 'center':
         # convert to diagonal format
@@ -161,10 +163,7 @@ def sparse_to_dense(sp_indices, output_shape, values, default_value=0):
 
 def bgr_to_rgb(ims):
     """Convert a list of images from BGR format to RGB format."""
-    out = []
-    for im in ims:
-        out.append(im[:,:,::-1])
-    return out
+    return [im[:,:,::-1] for im in ims]
 
 def bbox_transform(bbox):
     """convert a bbox of form [cx, cy, w, h] to [xmin, ymin, xmax, ymax]. Works
@@ -198,8 +197,10 @@ def bbox_transform_inv(bbox):
     return out_box
 
 def _draw_box(im, box_list, label_list, color=(0,255,0), cdict=None, form='center'):
-    assert form == 'center' or form == 'diagonal', \
-        'bounding box format not accepted: {}.'.format(form)
+    assert form in [
+        'center',
+        'diagonal',
+    ], f'bounding box format not accepted: {form}.'
     for bbox, label in zip(box_list, label_list):
         if form == 'center':
             bbox = bbox_transform(bbox)
@@ -207,11 +208,7 @@ def _draw_box(im, box_list, label_list, color=(0,255,0), cdict=None, form='cente
         xmin, ymin, xmax, ymax = [int(b) for b in bbox]
 
         l = label.split(':')[0]  # text before "CLASS: (PROB)"
-        if cdict and l in cdict:
-            c = cdict[l]
-        else:
-            c = color
-
+        c = cdict[l] if cdict and l in cdict else color
         # draw box
         cv2.rectangle(im, (xmin, ymin), (xmax, ymax), c, 1)
         # draw label
@@ -231,12 +228,7 @@ def category_index_from_label_map(label_map_file):
     with open(label_map_file, 'r') as f:
         # print(f.read())
         labels = json.load(f)
-    label_dict = {}
-    for label in labels:
-        id = label['id']
-        label_dict[id] = label
-
-    return label_dict
+    return {label['id']: label for label in labels}
 
 class Timer(object):
     def __init__(self):
@@ -254,10 +246,7 @@ class Timer(object):
         self.total_time += self.duration
         self.calls += 1
         self.average_time = self.total_time/self.calls
-        if average:
-            return self.average_time
-        else:
-            return self.duration
+        return self.average_time if average else self.duration
 
 def safe_exp(w, thresh):
     """Safe exponential function for tensors."""

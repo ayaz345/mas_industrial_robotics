@@ -24,7 +24,6 @@ def get_model(pointcloud, num_classes, is_training, base=False):
     :return:    Logits and endpoints
     """
     batch_size = pointcloud.get_shape()[0].value
-    end_points = {}
     k = 20
 
     adj_matrix = tf_util.pairwise_distance(pointcloud)
@@ -37,8 +36,7 @@ def get_model(pointcloud, num_classes, is_training, base=False):
                         scope='dgcnn1', bn_decay=None)
     net = tf.reduce_max(net, axis=-2, keep_dims=True)
     net1 = net
-    end_points['dgcnn1'] = net1
-
+    end_points = {'dgcnn1': net1}
     adj_matrix = tf_util.pairwise_distance(net)
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
@@ -87,11 +85,11 @@ def get_model(pointcloud, num_classes, is_training, base=False):
         return end_points
 
     # MLP on global point cloud vector
-    net = tf.reshape(net, [batch_size, -1]) 
+    net = tf.reshape(net, [batch_size, -1])
     net = tf_util.fully_connected(net, 512, bn=True, is_training=is_training,
                                      scope='fc1', bn_decay=None)
     net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training, scope='dp1')
-    
+
     net = tf_util.fully_connected(net, 256, bn=True, is_training=is_training,
                                      scope='fc2', bn_decay=None)
     net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,scope='dp2')

@@ -32,7 +32,7 @@ author = "www.b-it-bots.de"
 # The full version, including alpha/beta/rc tags
 # current_hash = get_git_short_hash()
 current_hash = "Noetic"
-version = "latest ({})".format(current_hash)
+version = f"latest ({current_hash})"
 release = version
 
 

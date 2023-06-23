@@ -20,7 +20,7 @@ class Utils(object):
         """
         connected_nodes = []
         fringe = [start_cell]
-        while len(fringe) > 0:
+        while fringe:
             current = fringe.pop(0)
             if current in connected_nodes:
                 continue
@@ -28,9 +28,11 @@ class Utils(object):
                 current, walled_edges, max_row, max_col
             )
             connected_nodes.append(current)
-            for neighbour in connected_neighbours:
-                if neighbour not in connected_nodes:
-                    fringe.append(neighbour)
+            fringe.extend(
+                neighbour
+                for neighbour in connected_neighbours
+                if neighbour not in connected_nodes
+            )
         return connected_nodes
 
     @staticmethod
@@ -52,12 +54,11 @@ class Utils(object):
 
         """
         neighbours = Utils.get_neighbours(node[0], node[1], max_row, max_col)
-        connected_neighbours = [
+        return [
             n
             for n in neighbours
             if (node, n) not in walled_edges and (n, node) not in walled_edges
         ]
-        return connected_neighbours
 
     @staticmethod
     def get_neighbours(i, j, max_row, max_col):

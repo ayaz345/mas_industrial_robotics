@@ -114,7 +114,7 @@ class mir_trajectory_executor_ros:
             return 'INIT'
         elif self.path.any != None:
             return 'RUNNING'
-        elif self.path == None and self.event == 'e_start':
+        elif self.path is None and self.event == 'e_start':
             rospy.loginfo('Path not recieved')
             self.event_pub.publish('e_failure')
             self.event = None
@@ -131,12 +131,12 @@ class mir_trajectory_executor_ros:
         if self.event == 'e_stop':
             self.reset_component_data()
             self.event_pub.publish('e_stopped')
-            return 'INIT'
         else:
             self.execute()
             self.event_pub.publish('e_success')
             self.reset_component_data()
-            return 'INIT'
+
+        return 'INIT'
 
     '''
     USER-DEFINED FUNCTIONS
@@ -150,7 +150,7 @@ class mir_trajectory_executor_ros:
         self.points = None
 
     def extract_current_pose(self):
-        while True and not rospy.is_shutdown():
+        while not rospy.is_shutdown():
             try:
                 (trans,rot) = self.tf_listener.lookupTransform('/base_link', '/arm_link_5', rospy.Time(0))
                 return trans,rot

@@ -208,7 +208,7 @@ class approach_pose(smach.State):
 
         # get pose from parameter server
         if type(self.pose_name2) is str:
-            parameter_name = "/script_server/base/" + self.pose_name2
+            parameter_name = f"/script_server/base/{self.pose_name2}"
             if not rospy.has_param(parameter_name):
                 rospy.logerr(
                     "parameter <<%s>> does not exist on ROS Parameter Server, aborting...",

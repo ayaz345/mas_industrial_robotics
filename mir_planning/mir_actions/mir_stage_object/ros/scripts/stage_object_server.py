@@ -43,7 +43,7 @@ class SetupMoveArm(smach.State):
         # Add empty result msg (because if none of the state do it, action server gives error)
         userdata.result = GenericExecuteResult()
         userdata.feedback = GenericExecuteFeedback(
-            current_state="SetupMoveArm", text="Moving arm to " + platform
+            current_state="SetupMoveArm", text=f"Moving arm to {platform}"
         )
         return "succeeded"
 

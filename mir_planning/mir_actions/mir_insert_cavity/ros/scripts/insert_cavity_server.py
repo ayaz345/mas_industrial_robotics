@@ -108,15 +108,14 @@ class ppt_wiggle_arm(smach.State):
         try:
             arm_command.set_joint_value_target(joint_values)
         except Exception as e:
-            rospy.logerr("unable to set target position: %s" % (str(e)))
+            rospy.logerr(f"unable to set target position: {str(e)}")
             return "failed"
         error_code = arm_command.go(wait=self.blocking)
 
         if error_code == MoveItErrorCodes.SUCCESS:
             return "succeeded"
-        else:
-            rospy.logerr("Arm movement failed with error code: %d", error_code)
-            return "failed"
+        rospy.logerr("Arm movement failed with error code: %d", error_code)
+        return "failed"
 
     def execute(self, userdata):
         # open the arm slightly
@@ -127,11 +126,11 @@ class ppt_wiggle_arm(smach.State):
         joint_number_to_change = None
         wiggle_offset = None
         self.joint_values_static = arm_command.get_current_joint_values()
+        wiggle_offset = -0.12
         #################
         if np.allclose(self.yaw, 0):
             # wiggle right left first
             joint_number_to_change = 0
-            wiggle_offset = -0.12
             self.execute_arm(joint_number_to_change, wiggle_offset)
             # go left
             joint_number_to_change = 0
@@ -156,7 +155,6 @@ class ppt_wiggle_arm(smach.State):
         else:
             # wiggle forward
             joint_number_to_change = 3
-            wiggle_offset = -0.12
             self.execute_arm(joint_number_to_change, wiggle_offset)
             # go left
             joint_number_to_change = 3

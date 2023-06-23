@@ -87,13 +87,14 @@ class MoveitClient:
     def execute(self, userdata, blocking=True):
         target = self.move_arm_to or userdata.move_arm_to
 
+        redo = False
         # do it twice because it probably fails the first time
-        for i in range(2):
+        for _ in range(2):
             self.client_event = None
             self.pub_event.publish("e_start")
 
             if type(target) is str:  # target is a string specifing a joint position
-                rospy.loginfo("MOVING ARM TO: " + str(target))
+                rospy.loginfo(f"MOVING ARM TO: {str(target)}")
                 self.pub_target_config_name.publish(target)
 
             elif type(target) is list:  # target is a list ...
@@ -121,10 +122,6 @@ class MoveitClient:
                         rospy.logerr("Could not find IK")
                         return 'failed'
                     self.pub_target_config.publish(brics_joint_pos_msg)
-                elif len(target) == 5:  # ... of 5 items: Joint space configuration
-                    self.pub_target_config.publish(
-                        self.list_to_brics_joint_positions(target)
-                    )
                 else:
                     rospy.logerr("target list is malformed")
                     return "failed"
@@ -137,18 +134,12 @@ class MoveitClient:
             timeout = rospy.Duration.from_sec(self.timeout)
             rate = rospy.Rate(10)
             start_time = rospy.Time.now()
-            redo = False
             while blocking:
                 if (rospy.Time.now() - start_time) > timeout:
-                    rospy.loginfo(
-                        "Moveit " + self.moveit_group + "client node response timeout."
-                    )
+                    rospy.loginfo(f"Moveit {self.moveit_group}client node response timeout.")
                     break
                 if self.client_event:
-                    if self.client_event == "e_success":
-                        return "succeeded"
-                    else:
-                        return "failed"
+                    return "succeeded" if self.client_event == "e_success" else "failed"
                 rate.sleep()
 
             if not blocking:
@@ -231,17 +222,19 @@ class control_gripper(smach.State):
     def execute(self, userdata):
         self.pub.publish(self.command)
         while True:
-            if (self.current_state == "GRIPPER_OPEN" or self.current_state == "GRIPPER_INTER") and\
-                    self.command.command != GripperCommand.CLOSE:
+            if (
+                self.current_state in ["GRIPPER_OPEN", "GRIPPER_INTER"]
+                and self.command.command != GripperCommand.CLOSE
+            ):
                 self.grasped_counter = 0
                 return "succeeded"
             elif self.current_state == "GRIPPER_CLOSED" and\
-                    self.command.command == GripperCommand.CLOSE:
+                        self.command.command == GripperCommand.CLOSE:
                 self.grasped_counter = 0
                 return "succeeded"
             elif self.current_state == "OBJECT_GRASPED" and\
-                    self.grasped_counter > 4 and\
-                    self.command.command == GripperCommand.CLOSE:
+                        self.grasped_counter > 4 and\
+                        self.command.command == GripperCommand.CLOSE:
                 self.grasped_counter = 0
                 return "succeeded"
             rospy.sleep(0.1)
@@ -265,12 +258,14 @@ class verify_object_grasped(smach.State):
         start_time = rospy.Time.now()
         while (rospy.Time.now() - start_time < self.timeout):
             rospy.sleep(0.1)
-            if self.current_state == "GRIPPER_CLOSED" or\
-               self.current_state == "GRIPPER_INTER" or\
-               self.current_state == "GRIPPER_OPEN":
+            if self.current_state in [
+                "GRIPPER_CLOSED",
+                "GRIPPER_INTER",
+                "GRIPPER_OPEN",
+            ]:
                 return "failed"
             elif self.current_state == "OBJECT_GRASPED" and\
-                        self.grasped_counter > 4:
+                            self.grasped_counter > 4:
                 self.grasped_counter = 0
                 return "succeeded"
         return "failed"
@@ -323,8 +318,7 @@ class move_arm_and_gripper(smach.State):
         while text[match.end() + i] != '"':
             str += text[match.end() + i]
             i += 1
-        angle = float(str)
-        return angle
+        return float(str)
 
     def execute(self, userdata):
         self.pub.publish(self.gripper_command)
@@ -361,9 +355,6 @@ class linear_motion(smach.State):
         if self.operation == "grasp":
             gripper_command.set_named_target("open")
             gripper_command.go(wait=True)
-        elif self.operation == "release":
-            pass  # Don't do anything, assume the gripper is already closed
-
         # start the relative approach and wait for the result
         self.event_out.publish("e_start")
         while not self.result:
@@ -417,7 +408,7 @@ class compute_pregrasp_pose(smach.State):
             tf.ConnectivityException,
             tf.ExtrapolationException,
         ) as e:
-            rospy.logerr("Tf error: %s" % str(e))
+            rospy.logerr(f"Tf error: {str(e)}")
             return "tf_transform_failed"
 
         p = pose.pose.position
@@ -488,7 +479,7 @@ class update_robot_planning_scene(smach.State):
     def execute(self, userdata):
 
         self.pub_object_id.publish(userdata.object.database_id)
-        self.pub_event.publish("e_" + self.action)
+        self.pub_event.publish(f"e_{self.action}")
 
         return "succeeded"
 

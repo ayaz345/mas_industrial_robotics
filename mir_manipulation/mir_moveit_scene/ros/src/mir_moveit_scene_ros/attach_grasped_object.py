@@ -200,7 +200,7 @@ class GraspedObjectAttacher(object):
         attaches a box to the robot at the attachment frame
         """
         rospy.loginfo("Attaching object to planning scene robot")
-        self.attached_object_name = "attached_" + name
+        self.attached_object_name = f"attached_{name}"
 
         box_object = moveit_msgs.msg.AttachedCollisionObject()
         box_object.link_name = self.attachment_frame_id

@@ -20,7 +20,7 @@ def main():
     rospy.sleep(0.5)
 
     pddl_problem_file = rospy.get_param("~problem_file", None)
-    if pddl_problem_file == None:
+    if pddl_problem_file is None:
         rospy.logerr("No problem file provided. Exiting...")
         return
 

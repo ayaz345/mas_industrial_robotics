@@ -85,11 +85,9 @@ class GridBasedGenerator(object):
 
             all_edges = []
             for i in range(self._num_of_rows - 1):
-                for j in range(self._num_of_cols):
-                    all_edges.append(((i, j), (i + 1, j)))
+                all_edges.extend(((i, j), (i + 1, j)) for j in range(self._num_of_cols))
             for i in range(self._num_of_rows):
-                for j in range(self._num_of_cols - 1):
-                    all_edges.append(((i, j), (i, j + 1)))
+                all_edges.extend(((i, j), (i, j + 1)) for j in range(self._num_of_cols - 1))
             walled_edges = []
             for edge in all_edges:
                 if random.random() < self._wall_generation_threshold:
@@ -98,8 +96,7 @@ class GridBasedGenerator(object):
             walled_edge = self._make_connected(walled_edges)
             self._walled_edges = walled_edges
 
-            success = self._generate_ws()
-            if success:
+            if success := self._generate_ws():
                 print("=" * 40)
                 print()
                 return True
@@ -146,7 +143,7 @@ class GridBasedGenerator(object):
         for ws_dict in self._ws:
             direction = Node.get_direction_from_theta(ws_dict["theta"])
             x, y = ws_dict["x"], ws_dict["y"]
-            if direction == "E" or direction == "W":
+            if direction in ["E", "W"]:
                 xy = [
                     (x - Node.ws_width / 2, y - Node.ws_length / 2),
                     (x + Node.ws_width / 2, y + Node.ws_length / 2),
@@ -205,16 +202,11 @@ class GridBasedGenerator(object):
             with open(os.path.join(xacro_snippet_dir, file_name), "r") as file_obj:
                 snippets[file_name] = file_obj.read()
 
-        file_string = []
-
-        # start with headers
-        file_string.append(snippets["beginning"].format(**{"NAME": name}))
+        file_string = [snippets["beginning"].format(**{"NAME": name})]
 
         # add walls
         wall_dict_list = self._get_wall_dict_list()
-        for wall in wall_dict_list:
-            file_string.append(snippets["wall"].format(**wall))
-
+        file_string.extend(snippets["wall"].format(**wall) for wall in wall_dict_list)
         # add all ws (ws, sh, pp)
         for ws_dict in self._ws:
             x = ws_dict["x"] * self._resolution + (self._start_cell[1] * 1.5) - 0.75
@@ -230,7 +222,7 @@ class GridBasedGenerator(object):
 
         # write to a file
         string = "".join(file_string)
-        xacro_path = os.path.join(self._generation_dir, name + ".xacro")
+        xacro_path = os.path.join(self._generation_dir, f"{name}.xacro")
         with open(xacro_path, "w") as file_obj:
             file_obj.write(string)
         print("Xacro file created:", xacro_path)
@@ -249,12 +241,12 @@ class GridBasedGenerator(object):
             delta_x = math.cos(theta) * -self._base_link_to_ws_center
             delta_y = math.sin(theta) * -self._base_link_to_ws_center
             pos = str([round(x + delta_x, 3), round(-y + delta_y, 3), round(theta, 3)])
-            nav_goals.append(name + ": " + pos)
+            nav_goals.append(f"{name}: {pos}")
         nav_goals.sort()
         nav_goals.append("START: [0.0, 0.0, 0.0]")
         x = (self._exit_cell[1] * 1.5) + (self._start_cell[1] * 1.5)
         y = -(self._exit_cell[0] * 1.5) + (self._start_cell[0] * 1.5)
-        nav_goals.append("EXIT: [" + str(x) + ", " + str(y) + ", 0.0]")
+        nav_goals.append(f"EXIT: [{str(x)}, {str(y)}, 0.0]")
 
         nav_goal_path = os.path.join(self._generation_dir, "navigation_goals.yaml")
         with open(nav_goal_path, "w") as file_obj:
@@ -307,7 +299,7 @@ class GridBasedGenerator(object):
         return True
 
     def _calc_cell_ws_probability(self, i, j):
-        if (i, j) == self._start_cell or (i, j) == self._exit_cell:
+        if (i, j) in [self._start_cell, self._exit_cell]:
             self._grid[i][j].probable_ws_direction = []
             return
         connected_neighbours = Utils.get_connected_neighbour(
@@ -333,16 +325,18 @@ class GridBasedGenerator(object):
         while len(connected_nodes) != self._num_of_rows * self._num_of_cols:
             disconnected_nodes = []
             for i in range(self._num_of_rows):
-                for j in range(self._num_of_cols):
-                    if (i, j) not in connected_nodes:
-                        disconnected_nodes.append((i, j))
+                disconnected_nodes.extend(
+                    (i, j)
+                    for j in range(self._num_of_cols)
+                    if (i, j) not in connected_nodes
+                )
             node = random.choice(disconnected_nodes)
             walls_around_node = [
                 walled_edge
                 for walled_edge in walled_edges
-                if node == walled_edge[0] or node == walled_edge[1]
+                if node in [walled_edge[0], walled_edge[1]]
             ]
-            if len(walls_around_node) == 0:
+            if not walls_around_node:
                 continue
             chosen_wall = random.choice(walls_around_node)
             walled_edges.remove(chosen_wall)
@@ -359,15 +353,14 @@ class GridBasedGenerator(object):
         for edge in self._walled_edges:
             n1 = self._grid[edge[0][0]][edge[0][1]]
             n2 = self._grid[edge[1][0]][edge[1][1]]
+            p1 = (n2.x * self._resolution, n2.y * self._resolution)
             if n1.x == n2.x:
-                p1 = (n2.x * self._resolution, n2.y * self._resolution)
                 p2 = (
                     (n2.x + self._grid_dim) * self._resolution,
                     n2.y * self._resolution,
                 )
                 theta = 0.0
             else:
-                p1 = (n2.x * self._resolution, n2.y * self._resolution)
                 p2 = (
                     n2.x * self._resolution,
                     (n2.y + self._grid_dim) * self._resolution,

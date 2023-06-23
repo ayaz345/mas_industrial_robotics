@@ -80,9 +80,7 @@ class ArucoCubePerceiver(object):
         :returns: None
 
         """
-        camera_mat = []
-        for i in range(3):
-            camera_mat.append(list(msg.K[i * 3: i * 3 + 3]))
+        camera_mat = [list(msg.K[i * 3: i * 3 + 3]) for i in range(3)]
         self._camera_mat = np.array(camera_mat)
         dist_coeff = list(msg.D)
         self._dist_coeff = np.array(dist_coeff)
@@ -243,7 +241,6 @@ class ArucoCubePerceiver(object):
                 self._debug_image_pub.publish(ros_debug_img)
             except CvBridgeError as e:
                 rospy.logwarn("Could not convert debug cv image to ros image")
-                pass
         return best_corners
 
 

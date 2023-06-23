@@ -106,12 +106,10 @@ class ValidateDrawerOpened(smach.State):
             rospy.logerr("dbc params not available")
             return "failed"
 
-        # dist_from_base_link_to_drawer - dist_from_front_laser_to_drawer - dist_from_base_link_to_front_laser < 5 cm
         if abs(abs(self._ideal_dist) - self._front_laser_dist - 0.3) < 0.05:
             return "succeeded"
-        else:
-            rospy.logerr("Drawer open validation failed.")
-            return "failed"
+        rospy.logerr("Drawer open validation failed.")
+        return "failed"
 
 
 # ===============================================================================

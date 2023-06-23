@@ -97,7 +97,5 @@ class PlanVisualiser(object):
         if self._complete_plan:
             self._set_markers_for_complete_plan(kb_markers, kb_data)
 
-        # flatten the list of markers
-        flattened_kb_markers = list(itertools.chain.from_iterable(kb_markers))
-        return(flattened_kb_markers)
+        return list(itertools.chain.from_iterable(kb_markers))
         # return sum(kb_markers, [])

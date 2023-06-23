@@ -12,9 +12,7 @@ def get_orientation_from_param_server(
     parameter_name = param_ns + orientation_goal
     if not rospy.has_param(parameter_name):
         rospy.logerr(
-            "parameter '{}' does not exist on ROS Parameter Server, aborting...".format(
-                parameter_name
-            )
+            f"parameter '{parameter_name}' does not exist on ROS Parameter Server, aborting..."
         )
         return None
     else:
@@ -53,9 +51,7 @@ def get_pose_from_param_server(
     parameter_name = param_ns + navigation_goal
     if not rospy.has_param(parameter_name):
         rospy.logerr(
-            "parameter '{}' does not exist on ROS Parameter Server, aborting...".format(
-                parameter_name
-            )
+            f"parameter '{parameter_name}' does not exist on ROS Parameter Server, aborting..."
         )
         return None
     else:
@@ -89,4 +85,4 @@ if __name__ == "__main__":
             print("Quitting...")
             sys.exit(0)
         pose = get_pose_from_param_server(nav_goal)
-        print("Pose for navigation goal '{}': {}".format(nav_goal, pose))
+        print(f"Pose for navigation goal '{nav_goal}': {pose}")

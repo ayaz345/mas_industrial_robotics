@@ -175,12 +175,14 @@ class AtworkCommanderClient(object):
     def _find_obj_dict_with(self, obj_dicts, object_name=None, object_full_name=None,
                             decoy=None, location=None, target=None):
         for i, obj_dict in enumerate(obj_dicts):
-            bool_list = []
-            bool_list.append(object_name is None or object_name == obj_dict["object"])
-            bool_list.append(object_full_name is None or object_full_name == obj_dict["object_full_name"])
-            bool_list.append(decoy is None or decoy == obj_dict["decoy"])
-            bool_list.append(location is None or location == obj_dict["location"])
-            bool_list.append(target is None or target == obj_dict["target"])
+            bool_list = [
+                object_name is None or object_name == obj_dict["object"],
+                object_full_name is None
+                or object_full_name == obj_dict["object_full_name"],
+                decoy is None or decoy == obj_dict["decoy"],
+                location is None or location == obj_dict["location"],
+                target is None or target == obj_dict["target"],
+            ]
             if all(bool_list):
                 return i
         return -1
@@ -204,13 +206,16 @@ class AtworkCommanderClient(object):
         facts = []
         for obj_dict in obj_dicts:
             if "container" in obj_dict["object"] or "cavity" in obj_dict["object"]:
-                facts.append(self._get_fact_from_attr_and_values(
-                    "container",
-                    [obj_dict["object_full_name"]]))
-                facts.append(self._get_fact_from_attr_and_values(
-                    "heavy",
-                    [obj_dict["object_full_name"]]))
-
+                facts.extend(
+                    (
+                        self._get_fact_from_attr_and_values(
+                            "container", [obj_dict["object_full_name"]]
+                        ),
+                        self._get_fact_from_attr_and_values(
+                            "heavy", [obj_dict["object_full_name"]]
+                        ),
+                    )
+                )
             if "container" in obj_dict["target"] or "cavity" in obj_dict["target"]:
                 facts.append(self._get_fact_from_attr_and_values(
                     "insertable",
@@ -274,7 +279,7 @@ class AtworkCommanderClient(object):
             for obj in workstation.objects:
 
                 if obj.object not in self._obj_code_to_name:
-                    rospy.logwarn("Could not find " + str(obj.object) + " in object codes")
+                    rospy.logwarn(f"Could not find {str(obj.object)} in object codes")
                     continue
 
                 if self._cavity_start_code <= obj.object < self._cavity_end_code:
@@ -283,7 +288,7 @@ class AtworkCommanderClient(object):
                     object_name = self._obj_code_to_name[obj.object]
 
                 if obj.target not in self._obj_code_to_name:
-                    rospy.logwarn("Could not find " + str(obj.target) + " in object codes")
+                    rospy.logwarn(f"Could not find {str(obj.target)} in object codes")
                     continue
 
                 if self._cavity_start_code <= obj.target < self._cavity_end_code:
@@ -364,12 +369,12 @@ class AtworkCommanderClient(object):
 
     @staticmethod
     def get_obj_code_to_name_dict():
-        obj_code_to_name = {}
         object_class_attributes = dir(Object)
-        for attr in object_class_attributes:
-            if attr.isupper() and "START" not in attr and "END" not in attr:
-                obj_code_to_name[getattr(Object, attr)] = attr.lower()
-        return obj_code_to_name
+        return {
+            getattr(Object, attr): attr.lower()
+            for attr in object_class_attributes
+            if attr.isupper() and "START" not in attr and "END" not in attr
+        }
 
     @staticmethod
     def get_object_full_name(object_name, count):
@@ -384,10 +389,10 @@ class AtworkCommanderClient(object):
 
         """
         name = ""
-        if object_name == "container_red":
-            name = "container_box_red"
-        elif object_name == "container_blue":
+        if object_name == "container_blue":
             name = "container_box_blue"
+        elif object_name == "container_red":
+            name = "container_box_red"
         else:
             name = object_name
-        return name + "-" + str(count-1).zfill(2)
+        return f"{name}-{str(count - 1).zfill(2)}"

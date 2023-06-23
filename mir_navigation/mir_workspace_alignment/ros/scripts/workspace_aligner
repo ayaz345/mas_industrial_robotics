@@ -87,8 +87,7 @@ class WorkspaceAligner:
         """
         rospy.loginfo(msg)
         if msg.data == "e_trigger":
-            success = self._calculate_aligned_pose()
-            if success:
+            if success := self._calculate_aligned_pose():
                 self._event_out_pub.publish(String(data="Completed"))
             else:
                 self._event_out_pub.publish(String(data="Failed"))
@@ -148,10 +147,7 @@ class WorkspaceAligner:
         if self._counter < self._num_of_msgs:
             return False
 
-        workspace_line_segment = self._get_avg_line_segment()
-
-        # convert line segment to PoseStamped
-        if workspace_line_segment:
+        if workspace_line_segment := self._get_avg_line_segment():
             workspace_pose = PoseStamped()
             quat = tf.transformations.quaternion_from_euler(
                 0, 0, workspace_line_segment.angle
@@ -209,14 +205,14 @@ class WorkspaceAligner:
         :returns: list of laser_line_extraction/LineSegment
 
         """
-        filtered_line_segments = []
-        for line_segment in line_segments:
+        return [
+            line_segment
+            for line_segment in line_segments
             if (
                 abs(math.degrees(line_segment.angle)) < self._angle_threshold
                 and line_segment.radius < self._distance_threshold
-            ):
-                filtered_line_segments.append(line_segment)
-        return filtered_line_segments
+            )
+        ]
 
     def _get_workspace_line_segment(self, line_segments):
         """Return a single line segment as a result of list of line segments which

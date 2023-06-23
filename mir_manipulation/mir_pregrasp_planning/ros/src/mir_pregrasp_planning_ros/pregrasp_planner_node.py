@@ -109,7 +109,7 @@ class PregraspPlannerPipeline(object):
         self.gripper = rospy.get_param("~gripper_config_matrix", None)
         assert self.gripper is not None, "Gripper config matrix must be specified."
         # Configuration matrix of the gripper to be used (a real 4x4 matrix)
-        self.gripper_config_matrix = rospy.get_param("~" + self.gripper)
+        self.gripper_config_matrix = rospy.get_param(f"~{self.gripper}")
 
         # the sampling step for linear variables (in meters)
         self.linear_step = None
@@ -262,10 +262,7 @@ class PregraspPlannerPipeline(object):
         :rtype: str
 
         """
-        if self.event == "e_start":
-            return "IDLE"
-        else:
-            return "INIT"
+        return "IDLE" if self.event == "e_start" else "INIT"
 
     def idle_state(self):
         """
@@ -429,7 +426,7 @@ class PregraspPlannerPipeline(object):
             grasp_type = "side_grasp"
 
         if grasp_type == "side_grasp": 
-            
+
             # Adding offset for side grasp to compensate for error in side grasp pose
             modified_pose.pose.position.x += self.side_grasp_offset_x
             modified_pose.pose.position.y += self.side_grasp_offset_y
@@ -442,26 +439,19 @@ class PregraspPlannerPipeline(object):
         if self.default_ik_flag and not self.adaptive_ik_flag:
             if self.default_ik_routine(pose_samples, modified_pose, grasp_type):
                 status = "succeeded"
-                self.event_out.publish(status)
-                self.reset_component_data()
-                return "INIT"
             else:
                 status = "e_failure"
-                self.event_out.publish(status)
-                self.reset_component_data()
-                return "INIT"
-            
+            self.event_out.publish(status)
+            self.reset_component_data()
+            return "INIT"
         # if orientation independent IK failed and adaptive IK is set to true, try again with orientation independent IK
         if self.orientation_independent_ik_flag and not self.adaptive_ik_flag:
             if self.orientation_independent_ik_routine(transformed_pose, grasp_type):
                 self.event_out.publish("e_success")
-                self.reset_component_data()
-                return 'INIT'
             else:
                 self.event_out.publish("e_failure")
-                self.reset_component_data()
-                return 'INIT'
-
+            self.reset_component_data()
+            return 'INIT'
         # if adaptive IK is set to true, try both default and orientation independent IK routines
         if self.adaptive_ik_flag:
             if self.default_ik_routine(pose_samples, modified_pose, grasp_type):

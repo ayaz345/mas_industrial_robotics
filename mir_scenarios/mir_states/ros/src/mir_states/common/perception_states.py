@@ -25,13 +25,11 @@ class do_visual_servoing(smach.State):
 
     def execute(self, userdata):
         try:
-            rospy.loginfo("Calling service <<%s>>" % self.SERVER)
+            rospy.loginfo(f"Calling service <<{self.SERVER}>>")
             response = self.do_vs()
         except rospy.ServiceException as e:
             userdata.vscount = 0
-            rospy.logerr(
-                "Exception when calling service <<%s>>: %s" % (self.SERVER, str(e))
-            )
+            rospy.logerr(f"Exception when calling service <<{self.SERVER}>>: {str(e)}")
             return "failed"
         if response.return_value.error_code == 0:
             userdata.vscount = 0
@@ -102,7 +100,7 @@ class find_cavities(smach.State):
 
                 rospy.sleep(0.01)
 
-        if len(local_found_cavities) == 0:
+        if not local_found_cavities:
             return "failed"
 
         userdata.found_cavities = local_found_cavities

@@ -32,28 +32,22 @@ class VisualizeWorldModel:
         youbot = tk.PhotoImage(file="youbot.gif")
         entry = tk.PhotoImage(file="entry.gif")
 
-        self.locations = {}
         self.objects_on_location = {}
         self.goals_from_knowledge_base = {}
 
-        ##########################################################
-        # Workspace details
-        # @todo : move the below files as config file to load
-        ##########################################################
-
-        self.locations["SH-01"] = [100, 100, "Shelf 01"]
-        self.locations["SH-02"] = [320, 100, "Shelf 02"]
-        self.locations["SH-03"] = [530, 100, "Shelf 03"]
-        self.locations["SH-04"] = [830, 100, "Shelf 03"]
-        self.locations["WS-01"] = [820, 250, "Drilling Workstation"]
-        self.locations["WS-03"] = [750, 100, "Force Fitting Workstation"]
-        self.locations["CB-01"] = [100, 250, "Conveyor Belt"]
-        self.locations["WS-05"] = [200, 400, "Work Station "]
-        self.locations["WS-06"] = [500, 500, "Work Station "]
-        self.locations["WS-07"] = [800, 400, "Work Station "]
-        # self.locations['entry'] = [800, 250, "Entry"]
-        self.locations["yb"] = [500, 250, "Youbot"]
-
+        self.locations = {
+            "SH-01": [100, 100, "Shelf 01"],
+            "SH-02": [320, 100, "Shelf 02"],
+            "SH-03": [530, 100, "Shelf 03"],
+            "SH-04": [830, 100, "Shelf 03"],
+            "WS-01": [820, 250, "Drilling Workstation"],
+            "WS-03": [750, 100, "Force Fitting Workstation"],
+            "CB-01": [100, 250, "Conveyor Belt"],
+            "WS-05": [200, 400, "Work Station "],
+            "WS-06": [500, 500, "Work Station "],
+            "WS-07": [800, 400, "Work Station "],
+            "yb": [500, 250, "Youbot"],
+        }
         # creating empty list of objects
         for key, loc in self.locations.iteritems():
             self.objects_on_location[key] = [""]
@@ -131,7 +125,7 @@ class VisualizeWorldModel:
         # Writing names to the images
         for key, loc in self.locations.iteritems():
             self.canvas.create_text(
-                loc[0], loc[1], text=key + " " + loc[2], anchor=tk.NW, fill="blue"
+                loc[0], loc[1], text=f"{key} {loc[2]}", anchor=tk.NW, fill="blue"
             )
             text_id = self.canvas.create_text(loc[3], loc[4], text="", anchor=tk.NW)
             self.locations[key].append(text_id)

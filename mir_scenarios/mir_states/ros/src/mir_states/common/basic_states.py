@@ -69,10 +69,7 @@ class set_vs_status(smach.State):
 
     def execute(self, userdata):
         print ("status: {0}".format(self.status))
-        if self.status:
-            userdata.prev_vs_result = "success"
-        else:
-            userdata.prev_vs_result = "fail"
+        userdata.prev_vs_result = "success" if self.status else "fail"
         print ("[set_vs_status]: {0}".format(userdata.prev_vs_result))
 
         return "success"

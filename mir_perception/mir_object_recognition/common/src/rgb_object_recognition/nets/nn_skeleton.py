@@ -39,12 +39,17 @@ def _variable_on_device(name, shape, initializer, trainable=True):
     """
     # TODO(bichen): fix the hard-coded data type below
     dtype = tf.float32
-    if not callable(initializer):
-        var = tf.get_variable(name, initializer=initializer, trainable=trainable)
-    else:
-        var = tf.get_variable(
-            name, shape, initializer=initializer, dtype=dtype, trainable=trainable)
-    return var
+    return (
+        tf.get_variable(name, initializer=initializer, trainable=trainable)
+        if not callable(initializer)
+        else tf.get_variable(
+            name,
+            shape,
+            initializer=initializer,
+            dtype=dtype,
+            trainable=trainable,
+        )
+    )
 
 def _variable_with_weight_decay(name, shape, wd, initializer, trainable=True):
     """Helper to create an initialized Variable with weight decay.
@@ -114,7 +119,7 @@ class ModelSkeleton:
         )
 
         self.image_input, self.input_mask, self.box_delta_input, \
-            self.box_input, self.labels = tf.train.batch(
+                self.box_input, self.labels = tf.train.batch(
                 self.FIFOQueue.dequeue(), batch_size=mc.BATCH_SIZE,
                 capacity=mc.QUEUE_CAPACITY)
 
@@ -126,8 +131,7 @@ class ModelSkeleton:
         # flop counter
         self.flop_counter = [] # array of tuple of layer name, flop number
         # activation counter
-        self.activation_counter = [] # array of tuple of layer name, output activations
-        self.activation_counter.append(('input', mc.IMAGE_WIDTH*mc.IMAGE_HEIGHT*3))
+        self.activation_counter = [('input', mc.IMAGE_WIDTH*mc.IMAGE_HEIGHT*3)]
 
 
     def _add_forward_graph(self):
@@ -350,7 +354,7 @@ class ModelSkeleton:
 
         for grad, var in grads_vars:
             if grad is not None:
-                tf.summary.histogram(var.op.name + '/gradients', grad)
+                tf.summary.histogram(f'{var.op.name}/gradients', grad)
 
         with tf.control_dependencies([apply_gradient_op]):
             self.train_op = tf.no_op(name='train')
@@ -447,7 +451,7 @@ class ModelSkeleton:
             )
             out_shape = conv.get_shape().as_list()
             num_flops = \
-              (1+2*int(channels)*size*size)*filters*out_shape[1]*out_shape[2]
+                  (1+2*int(channels)*size*size)*filters*out_shape[1]*out_shape[2]
             if relu:
                 num_flops += 2*filters*out_shape[1]*out_shape[2]
             self.flop_counter.append((conv_param_name, num_flops))
@@ -456,10 +460,7 @@ class ModelSkeleton:
                 (conv_param_name, out_shape[1]*out_shape[2]*out_shape[3])
             )
 
-            if relu:
-                return tf.nn.relu(conv)
-            else:
-                return conv
+            return tf.nn.relu(conv) if relu else conv
 
 
     def _conv_layer(
@@ -491,17 +492,19 @@ class ModelSkeleton:
                 # check the shape
                 if (kernel_val.shape ==
                       (size, size, inputs.get_shape().as_list()[-1], filters)) \
-                   and (bias_val.shape == (filters, )):
+                       and (bias_val.shape == (filters, )):
                     use_pretrained_param = True
                 else:
-                    print ('Shape of the pretrained parameter of {} does not match, '
-                        'use randomly initialized parameter'.format(layer_name))
+                    print(
+                        f'Shape of the pretrained parameter of {layer_name} does not match, use randomly initialized parameter'
+                    )
             else:
-                print ('Cannot find {} in the pretrained model. Use randomly initialized '
-                       'parameters'.format(layer_name))
+                print(
+                    f'Cannot find {layer_name} in the pretrained model. Use randomly initialized parameters'
+                )
 
         if mc.DEBUG_MODE:
-            print('Input tensor shape to {}: {}'.format(layer_name, inputs.get_shape()))
+            print(f'Input tensor shape to {layer_name}: {inputs.get_shape()}')
 
         with tf.variable_scope(layer_name) as scope:
             channels = inputs.get_shape()[3]
@@ -510,7 +513,7 @@ class ModelSkeleton:
             # shape [h, w, in, out]
             if use_pretrained_param:
                 if mc.DEBUG_MODE:
-                    print ('Using pretrained model for {}'.format(layer_name))
+                    print(f'Using pretrained model for {layer_name}')
                 kernel_init = tf.constant(kernel_val , dtype=tf.float32)
                 bias_init = tf.constant(bias_val, dtype=tf.float32)
             elif xavier:
@@ -534,17 +537,13 @@ class ModelSkeleton:
                 name='convolution')
             conv_bias = tf.nn.bias_add(conv, biases, name='bias_add')
 
-            if relu:
-                out = tf.nn.relu(conv_bias, 'relu')
-            else:
-                out = conv_bias
-
+            out = tf.nn.relu(conv_bias, 'relu') if relu else conv_bias
             self.model_size_counter.append(
                 (layer_name, (1+size*size*int(channels))*filters)
             )
             out_shape = out.get_shape().as_list()
             num_flops = \
-              (1+2*int(channels)*size*size)*filters*out_shape[1]*out_shape[2]
+                  (1+2*int(channels)*size*size)*filters*out_shape[1]*out_shape[2]
             if relu:
                 num_flops += 2*filters*out_shape[1]*out_shape[2]
             self.flop_counter.append((layer_name, num_flops))
@@ -607,7 +606,7 @@ class ModelSkeleton:
                 bias_val = cw[layer_name][1]
 
         if mc.DEBUG_MODE:
-            print('Input tensor shape to {}: {}'.format(layer_name, inputs.get_shape()))
+            print(f'Input tensor shape to {layer_name}: {inputs.get_shape()}')
 
         with tf.variable_scope(layer_name) as scope:
             input_shape = inputs.get_shape().as_list()
@@ -617,8 +616,10 @@ class ModelSkeleton:
                 if use_pretrained_param:
                     try:
                         # check the size before layout transform
-                        assert kernel_val.shape == (hiddens, dim), \
-                            'kernel shape error at {}'.format(layer_name)
+                        assert kernel_val.shape == (
+                            hiddens,
+                            dim,
+                        ), f'kernel shape error at {layer_name}'
                         kernel_val = np.reshape(
                             np.transpose(
                                 np.reshape(
@@ -630,28 +631,34 @@ class ModelSkeleton:
                             (dim, -1)
                         ) # (H*W*C) x O
                         # check the size after layout transform
-                        assert kernel_val.shape == (dim, hiddens), \
-                            'kernel shape error at {}'.format(layer_name)
+                        assert kernel_val.shape == (
+                            dim,
+                            hiddens,
+                        ), f'kernel shape error at {layer_name}'
                     except:
                         # Do not use pretrained parameter if shape doesn't match
                         use_pretrained_param = False
-                        print ('Shape of the pretrained parameter of {} does not match, '
-                               'use randomly initialized parameter'.format(layer_name))
+                        print(
+                            f'Shape of the pretrained parameter of {layer_name} does not match, use randomly initialized parameter'
+                        )
             else:
                 dim = input_shape[1]
                 if use_pretrained_param:
                     try:
                         kernel_val = np.transpose(kernel_val, (1,0))
-                        assert kernel_val.shape == (dim, hiddens), \
-                            'kernel shape error at {}'.format(layer_name)
+                        assert kernel_val.shape == (
+                            dim,
+                            hiddens,
+                        ), f'kernel shape error at {layer_name}'
                     except:
                         use_pretrained_param = False
-                        print ('Shape of the pretrained parameter of {} does not match, '
-                               'use randomly initialized parameter'.format(layer_name))
+                        print(
+                            f'Shape of the pretrained parameter of {layer_name} does not match, use randomly initialized parameter'
+                        )
 
             if use_pretrained_param:
                 if mc.DEBUG_MODE:
-                    print ('Using pretrained model for {}'.format(layer_name))
+                    print(f'Using pretrained model for {layer_name}')
                 kernel_init = tf.constant(kernel_val, dtype=tf.float32)
                 bias_init = tf.constant(bias_val, dtype=tf.float32)
             elif xavier:
@@ -732,13 +739,12 @@ class ModelSkeleton:
           nothing
         """
         with tf.variable_scope('activation_summary') as scope:
-            tf.summary.histogram(
-                'activation_summary/'+layer_name, x)
+            tf.summary.histogram(f'activation_summary/{layer_name}', x)
             tf.summary.scalar(
-                'activation_summary/'+layer_name+'/sparsity', tf.nn.zero_fraction(x))
+                f'activation_summary/{layer_name}/sparsity', tf.nn.zero_fraction(x)
+            )
             tf.summary.scalar(
-                'activation_summary/'+layer_name+'/average', tf.reduce_mean(x))
-            tf.summary.scalar(
-                'activation_summary/'+layer_name+'/max', tf.reduce_max(x))
-            tf.summary.scalar(
-                'activation_summary/'+layer_name+'/min', tf.reduce_min(x))
+                f'activation_summary/{layer_name}/average', tf.reduce_mean(x)
+            )
+            tf.summary.scalar(f'activation_summary/{layer_name}/max', tf.reduce_max(x))
+            tf.summary.scalar(f'activation_summary/{layer_name}/min', tf.reduce_min(x))

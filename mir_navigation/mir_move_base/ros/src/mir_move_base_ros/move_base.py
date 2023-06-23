@@ -149,10 +149,7 @@ class MoveBase(object):
         :rtype: str
 
         """
-        if self.event == "e_start":
-            return "IDLE"
-        else:
-            return "INIT"
+        return "IDLE" if self.event == "e_start" else "INIT"
 
     def idle_state(self):
         """
@@ -204,10 +201,10 @@ class MoveBase(object):
                 self.event_out.publish("e_success")
                 self.reset_component_data()
                 return "INIT"
-            elif (
-                self.client_result == actionlib_msgs.msg.GoalStatus.ABORTED
-                or self.client_result == actionlib_msgs.msg.GoalStatus.REJECTED
-            ):
+            elif self.client_result in [
+                actionlib_msgs.msg.GoalStatus.ABORTED,
+                actionlib_msgs.msg.GoalStatus.REJECTED,
+            ]:
                 self.event_out.publish("e_failure")
                 self.reset_component_data()
                 return "INIT"

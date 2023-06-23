@@ -43,7 +43,7 @@ class SetupMoveArm(smach.State):
         # Add empty result msg (because if none of the state do it, action server gives error)
         userdata.result = GenericExecuteResult()
         userdata.feedback = GenericExecuteFeedback(
-            current_state="SetupMoveArm", text="Moving arm to " + platform
+            current_state="SetupMoveArm", text=f"Moving arm to {platform}"
         )
         return "succeeded"
 
@@ -64,10 +64,14 @@ class IsObjectHeavy(smach.State):
         if obj is None:
             rospy.logwarn('Missing parameter "object". Using default.')
             return "light"
-        for heavy_object in userdata.heavy_objects:
-            if heavy_object.upper() in obj.upper():
-                return "heavy"
-        return "light"
+        return next(
+            (
+                "heavy"
+                for heavy_object in userdata.heavy_objects
+                if heavy_object.upper() in obj.upper()
+            ),
+            "light",
+        )
 
 
 # ===============================================================================

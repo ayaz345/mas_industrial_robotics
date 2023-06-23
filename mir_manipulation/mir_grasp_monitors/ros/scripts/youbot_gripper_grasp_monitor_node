@@ -18,7 +18,7 @@ class YoubotGripperGraspMonitor:
             self.joint_names = sorted(rospy.get_param("joints"))
             rospy.loginfo("gripper joints: %s", self.joint_names)
 
-        self.current_joint_configuration = [0 for i in range(len(self.joint_names))]
+        self.current_joint_configuration = [0 for _ in range(len(self.joint_names))]
         self.unit = "m"
 
         # subscriptions
@@ -46,7 +46,7 @@ class YoubotGripperGraspMonitor:
     def wait_for_new_joint_states(self):
         self.received_state = False
 
-        while self.received_state == False:
+        while not self.received_state:
             rospy.sleep(0.01)
 
         return
@@ -54,10 +54,10 @@ class YoubotGripperGraspMonitor:
     def is_gripper_closed(self, req):
         self.wait_for_new_joint_states()
 
-        for gripper_joint_value in self.current_joint_configuration:
-            if gripper_joint_value > 0.003:
-                return False
-        return True
+        return all(
+            gripper_joint_value <= 0.003
+            for gripper_joint_value in self.current_joint_configuration
+        )
 
 
 if __name__ == "__main__":

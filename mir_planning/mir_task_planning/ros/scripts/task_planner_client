@@ -73,7 +73,7 @@ def main():
     # mode = PlanGoal.FAST
 
     try:
-        rospy.loginfo("Started " + NODE + " node")
+        rospy.loginfo(f"Started {NODE} node")
         plan = send_action_goal(
             domain_file=domain_file,
             problem_file=problem_file,
@@ -82,7 +82,7 @@ def main():
         )
         rospy.sleep(0.2)  # time for client to finish
     except Exception as e:
-        print("Got following exception while executing", NODE, "\n", str(e))
+        print("Got following exception while executing", NODE, "\n", e)
 
 
 if __name__ == "__main__":

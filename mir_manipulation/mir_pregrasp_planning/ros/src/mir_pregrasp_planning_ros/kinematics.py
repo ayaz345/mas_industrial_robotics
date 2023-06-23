@@ -45,8 +45,7 @@ class Kinematics(object):
             joint_arr[i] = joint_angle
         ee_frame = kdl.Frame()
         self.fk_solver.JntToCart(joint_arr, ee_frame)
-        ee_pose = Kinematics.get_pose_from_frame(ee_frame)
-        return ee_pose
+        return Kinematics.get_pose_from_frame(ee_frame)
 
     def inverse_kinematics(self, pose, initial_angles=None):
         """
@@ -68,10 +67,13 @@ class Kinematics(object):
                 if self._is_solution_within_limits(solution):
                     solutions.append(solution)
 
-        if len(solutions) == 0:
+        if not solutions:
             return None
         # return the solution nearest to intial angles
-        differences = [sum([sol - init for sol, init in zip(solution, initial_angles)]) for solution in solutions]
+        differences = [
+            sum(sol - init for sol, init in zip(solution, initial_angles))
+            for solution in solutions
+        ]
         return solutions[differences.index(min(differences))]
     
     def _analytical_ik(self, pose, offset_joint_1=True, offset_joint_3=True):
@@ -146,8 +148,8 @@ class Kinematics(object):
 
         # Third joint
         l_sqr = (p2.x() * p2.x()) + (p2.z() * p2.z())
-        l2_sqr = l2 * l2
-        l3_sqr = l3 * l3
+        l2_sqr = l2**2
+        l3_sqr = l3**2
         j3_cos = (l_sqr - l2_sqr - l3_sqr) / (2.0 * l2 * l3)
 
         if j3_cos > 0.9999999:
@@ -211,8 +213,7 @@ class Kinematics(object):
         success, tree = treeFromParam('/robot_description')
         if not success:
             return
-        chain = tree.getChain(self.root, self.tip)
-        return chain
+        return tree.getChain(self.root, self.tip)
 
     def _project_goal_orientation_into_arm_subspace(self, goal):
         y_t_hat = goal.M.UnitY()    # y vector of the rotation matrix
@@ -247,10 +248,10 @@ class Kinematics(object):
     def _is_solution_within_limits(self, solution):
         if solution is None or len(solution) != 5:
             return False
-        for i in range(5):
-            if solution[i] < self.lower_limit[i] or solution[i] > self.upper_limit[i]:
-                return False
-        return True
+        return not any(
+            solution[i] < self.lower_limit[i] or solution[i] > self.upper_limit[i]
+            for i in range(5)
+        )
 
     @staticmethod
     def get_pose_from_frame(frame):
@@ -278,5 +279,4 @@ class Kinematics(object):
         rot = kdl.Rotation.Quaternion(pose.orientation.x, pose.orientation.y,
                                       pose.orientation.z, pose.orientation.w)
         pos = kdl.Vector(pose.position.x, pose.position.y, pose.position.z)
-        frame = kdl.Frame(rot, pos)
-        return frame
+        return kdl.Frame(rot, pos)

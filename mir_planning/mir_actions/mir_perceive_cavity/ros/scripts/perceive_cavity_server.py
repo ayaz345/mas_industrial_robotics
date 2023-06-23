@@ -95,17 +95,15 @@ class PopulateResultWithCavities(smach.State):
         self.perceived_cavity_names = []
 
     def objects_callback(self, msg):
-       # self.perceived_cavity_names.extend([str(obj.name) for obj in msg.objects])
-       for obj in msg.objects:
+           # self.perceived_cavity_names.extend([str(obj.name) for obj in msg.objects])
+        for obj in msg.objects:
             if str(obj.name) not in self.perceived_cavity_names:
-                self.perceived_cavity_names.append(str(obj.name))
-            else:
-                pass 
+                self.perceived_cavity_names.append(str(obj.name)) 
 
     def execute(self, userdata):
         result = GenericExecuteResult()
         for i, obj in enumerate(self.perceived_cavity_names):
-            result.results.append(KeyValue(key="cavity_" + str(i + 1), value=obj))
+            result.results.append(KeyValue(key=f"cavity_{str(i + 1)}", value=obj))
         rospy.loginfo(result)
         userdata.result = result
 

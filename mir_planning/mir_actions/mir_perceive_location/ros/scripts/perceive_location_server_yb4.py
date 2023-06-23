@@ -34,7 +34,7 @@ class CheckIfBaseCentered(smach.State):
         self.distance_threshold = 0.1
 
     def get_robot_pose(self):
-        for i in range(10):
+        for _ in range(10):
             try:
                 trans, rot = self.tf_listener.lookupTransform('map', 'base_link', rospy.Time(0))
                 _, _, yaw = tf.transformations.euler_from_quaternion(rot)
@@ -45,18 +45,17 @@ class CheckIfBaseCentered(smach.State):
 
     def execute(self, userdata):
         target_location = Utils.get_value_of(userdata.goal.parameters, 'location')
-        if target_location is not None:
-            target_pose = Utils.get_pose_from_param_server(target_location)
-            robot_pose = self.get_robot_pose()
-            xdiff = target_pose.pose.position.x - robot_pose[0]
-            ydiff = target_pose.pose.position.y - robot_pose[1]
-            if (xdiff > self.distance_threshold or ydiff > self.distance_threshold):
-                return 'no'
-            else:
-                return 'yes'
-
-        else:
+        if target_location is None:
             return 'unavailable'
+        target_pose = Utils.get_pose_from_param_server(target_location)
+        robot_pose = self.get_robot_pose()
+        xdiff = target_pose.pose.position.x - robot_pose[0]
+        ydiff = target_pose.pose.position.y - robot_pose[1]
+        return (
+            'no'
+            if (xdiff > self.distance_threshold or ydiff > self.distance_threshold)
+            else 'yes'
+        )
 
 # ===============================================================================
 
@@ -175,9 +174,12 @@ class PopulateResultWithObjects(smach.State):
     def execute(self, userdata):
         result = GenericExecuteResult()
         for i, obj in enumerate(self.perceived_obj_names):
-            result.results.append(KeyValue(key="obj_" + str(i + 1), value=obj))
-            result.results.append(KeyValue(key="obj_" + str(i + 1) + "_id",
-                                           value=self.perceived_obj_db_id[i]))
+            result.results.append(KeyValue(key=f"obj_{str(i + 1)}", value=obj))
+            result.results.append(
+                KeyValue(
+                    key=f"obj_{str(i + 1)}_id", value=self.perceived_obj_db_id[i]
+                )
+            )
         userdata.result = result
 
         userdata.feedback = GenericExecuteFeedback()  # place holder
